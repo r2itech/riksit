@@ -1,0 +1,37 @@
+# dependencies
+node_modules
+.pnp
+.pnp.js
+
+# environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env*.local
+
+# next.js
+.next
+out
+build
+next-env.d.ts
+
+# production
+dist
+
+# misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# tooling
+*.tsbuildinfo
+.eslintcache
