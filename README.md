@@ -23,6 +23,8 @@ selectors floating on top as overlays.
 | AI            | **Google Gemini API** via `generativelanguage.googleapis.com` (server-side only) |
 | Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                   |
 | UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library          |
+| Formatting    | **Prettier** + **ESLint** (`next/core-web-vitals` + `eslint-config-prettier`)    |
+| Testing       | **Vitest** (TS-native, no transformer config required)                           |
 
 No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
@@ -224,6 +226,54 @@ npm run start       # serve the production build
 
 ---
 
+## Code Quality
+
+Formatting and linting are wired together so they never fight: ESLint enforces
+the linting rules (`next/core-web-vitals`) and `eslint-config-prettier` turns
+off any ESLint stylistic rule that would conflict with Prettier. Prettier owns
+all whitespace / wrapping decisions.
+
+```bash
+npm run lint          # ESLint check
+npm run lint:fix      # ESLint auto-fix
+npm run format        # Prettier — rewrite all files
+npm run format:check  # Prettier — fail if anything is unformatted (CI-friendly)
+```
+
+Config lives in `.prettierrc`, `.prettierignore`, and `.eslintrc.json`. Most
+IDEs (VS Code with the Prettier extension, JetBrains, etc.) pick these up
+automatically — turn on "format on save" and you're done.
+
+---
+
+## Testing
+
+Unit tests run on **Vitest**. Vitest handles TypeScript + ESM natively, so
+there's no transform config to maintain. Tests live alongside the lib code in
+`src/lib/__tests__/` and execute in the Node environment.
+
+```bash
+npm test              # single run (CI-friendly)
+npm run test:watch    # re-run on file change
+```
+
+What's covered today (6 files, ~65 tests, runs in ~1.5 s):
+
+| File                 | Module under test                     | Highlights                                                                                                                                                  |
+| -------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `markdown.test.ts`   | `src/lib/markdown.ts`                 | HTML escaping (XSS safety), headings, bold/italic/code, lists, paragraph grouping, end-to-end Gemini insight render                                         |
+| `cache.test.ts`      | `src/lib/cache.ts`                    | TTL hit/miss, expiry on advance, null/undefined skipped, per-key isolation, `invalidate()` (global + prefix)                                                |
+| `open-meteo.test.ts` | `src/lib/open-meteo.ts`               | `pm25Band` boundary thresholds (12 / 35.4 / 55.4 / 150.4) + null / NaN / Infinity                                                                           |
+| `bmkg.test.ts`       | `src/lib/bmkg.ts`                     | `buildForecast` grouping, min/max, midday picker, `days` limit; `getEarlyWarnings` only matches severe codes for _today_                                    |
+| `region-api.test.ts` | `src/lib/region-api.ts`               | `normalizeName` strips every admin prefix (Kabupaten / Kota Adm. / DKI / Daerah Istimewa); `findRegencyByName` exact + partial + Jakarta-form interop       |
+| `gemini.test.ts`     | `src/lib/gemini.ts` (`buildFallback`) | Heading structure, conditional risks (high temp / humidity / severe weather / unhealthy PM2.5 / M ≥ 5 quakes), no-risk fallthrough, missing-data robustness |
+
+**Not yet covered (deliberately):** React components and Next.js API routes —
+those want integration tests (React Testing Library + jsdom, or a Next.js
+HTTP test runner), which is a separate setup from unit tests.
+
+---
+
 ## Project Structure
 
 ```
@@ -266,17 +316,25 @@ src/
     gemini.ts               # server-side Gemini client + model chain + fallback
     markdown.ts             # escaping markdown → HTML renderer
     icons.tsx               # SVG icon set
+    __tests__/
+      markdown.test.ts      # Vitest — XSS-safe markdown rendering
+      cache.test.ts         # Vitest — TTL + invalidate + null-skip semantics
+      open-meteo.test.ts    # Vitest — pm25Band thresholds
+      bmkg.test.ts          # Vitest — forecast grouping + early-warning detection
+      region-api.test.ts    # Vitest — normalizeName + findRegencyByName
+      gemini.test.ts        # Vitest — buildFallback structure + risk detection
+
+# Root-level config
+.prettierrc                 # Prettier formatting rules
+.prettierignore             # files Prettier should ignore
+.eslintrc.json              # ESLint config (next/core-web-vitals + prettier)
+vitest.config.ts            # Vitest config (node env, tsconfig path resolution)
+tailwind.config.ts          # Tailwind theme + custom colors / animations
+next.config.mjs             # Next.js config
+tsconfig.json               # TypeScript config (path alias @/* → src/*)
 ```
 
 ---
-
-## Roadmap
-
-- **Community reports** via Supabase — citizen environmental observations with simple moderation, surfaced as aggregates on the map.
-- **Push notifications** for early warnings.
-- **Historical trends** with persistent storage.
-- **Polygon-following highlight** on click (Nominatim `polygon_geojson=1`) — kept off for now for CPU reasons.
-- Per-user / per-IP rate limiter on the insight endpoint for public deployments.
 
 ---
 

@@ -174,8 +174,8 @@ export async function generateInsight(snapshot: EnvironmentalSnapshot): Promise<
   return { generatedAt, text: buildFallback(snapshot), source: "fallback" };
 }
 
-/** Deterministic fallback insight constructed from the snapshot. */
-function buildFallback(s: EnvironmentalSnapshot): string {
+/** Deterministic fallback insight constructed from the snapshot. Exported for tests. */
+export function buildFallback(s: EnvironmentalSnapshot): string {
   const now = s.weather?.samples[0];
   const region = `${s.region.districtName}, ${s.region.regencyName}`;
   const band = pm25Band(s.airQuality?.pm2_5 ?? null);
