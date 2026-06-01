@@ -15,14 +15,14 @@ selectors floating on top as overlays.
 
 ## Tech Stack
 
-| Category | Choice |
-| --- | --- |
-| Framework | **Next.js 14** (App Router) + **TypeScript** |
-| Styling | **Tailwind CSS** (custom dark + neon theme, glassmorphism) |
-| Map | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles |
-| AI | **Google Gemini API** via `generativelanguage.googleapis.com` (server-side only) |
-| Markdown | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps |
-| UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library |
+| Category      | Choice                                                                           |
+| ------------- | -------------------------------------------------------------------------------- |
+| Framework     | **Next.js 14** (App Router) + **TypeScript**                                     |
+| Styling       | **Tailwind CSS** (custom dark + neon theme, glassmorphism)                       |
+| Map           | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles                        |
+| AI            | **Google Gemini API** via `generativelanguage.googleapis.com` (server-side only) |
+| Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                   |
+| UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library          |
 
 No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
@@ -31,6 +31,7 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 ## Features
 
 ### Region selection
+
 - **Cascading dropdowns** Province → Regency/City → District → Village.
 - **Searchable**: type to filter at every level (arrow keys + Enter, click-outside closes, Esc cancels).
 - **Auto-detect location** via `navigator.geolocation` + Nominatim reverse-geocode. Falls back to Kab. Majalengka, Jawa Barat if geolocation is denied.
@@ -38,6 +39,7 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - **URL persistence**: the active region is stored in query params (`?p=…&r=…&d=…&v=…`) — sharable and bookmarkable.
 
 ### Data dashboard
+
 - **Current weather** (BMKG): temperature, condition icon, humidity, wind, cloud cover.
 - **3-day forecast**: daily summary with icon + min/max temperature.
 - **Air quality** (Open-Meteo): PM2.5 plus a color-coded band (Good / Moderate / Unhealthy / etc.) + PM10, NO₂, O₃.
@@ -45,11 +47,13 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - **Early warnings**: banner shown when severe weather codes are detected for the day.
 
 ### Interactive map
+
 - **CARTO Dark** tiles served via OpenStreetMap.
 - Scroll-wheel zoom, click-to-select, summary popup on the selected village's marker.
 - A transient cyan marker shows where you just clicked until the new region's snapshot finishes loading.
 
 ### AI Insight
+
 - Re-generated automatically on every region change.
 - Consistent structure: `## Ringkasan Kondisi` → `## Potensi Risiko` → `## Rekomendasi`.
 - **Model fallback chain**: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`. Each model has a separate free-tier quota, so a 429 on one model is automatically retried on the next.
@@ -57,6 +61,7 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - **Per-region cache**: successful Gemini results are cached for 10 minutes (matching the snapshot data window); fallback results are cached for only 2 minutes so Gemini gets retried sooner once the quota window recovers.
 
 ### Real-time earthquake feed
+
 - Client-side polling of `/api/earthquake` every **90 seconds** while the tab is visible (`visibilitychange`-aware → pauses when the tab is backgrounded).
 - Server-side cache of 60 seconds on `autogempa.json` → at most one upstream request per 90 seconds per server instance.
 - A "Last check" timestamp is shown on the earthquake card.
@@ -67,13 +72,13 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
 All endpoints are **free** and require no API key.
 
-| Endpoint | Purpose | Server cache TTL |
-| --- | --- | --- |
-| `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={code}` | Per-village weather forecast | 10 min |
-| `https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json` | Latest earthquake | 60 s |
-| `https://air-quality-api.open-meteo.com/v1/air-quality` | PM2.5, PM10, NO₂, O₃ | 10 min |
-| `https://wilayah.id/api/{provinces\|regencies\|districts\|villages}/…` | Indonesian administrative regions (Kemendagri codes — identical to BMKG `adm4`) | 24 h |
-| `https://nominatim.openstreetmap.org/reverse?…` | Reverse geocoding (geolocate + map click) | — |
+| Endpoint                                                               | Purpose                                                                         | Server cache TTL |
+| ---------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------- |
+| `https://api.bmkg.go.id/publik/prakiraan-cuaca?adm4={code}`            | Per-village weather forecast                                                    | 10 min           |
+| `https://data.bmkg.go.id/DataMKG/TEWS/autogempa.json`                  | Latest earthquake                                                               | 60 s             |
+| `https://air-quality-api.open-meteo.com/v1/air-quality`                | PM2.5, PM10, NO₂, O₃                                                            | 10 min           |
+| `https://wilayah.id/api/{provinces\|regencies\|districts\|villages}/…` | Indonesian administrative regions (Kemendagri codes — identical to BMKG `adm4`) | 24 h             |
+| `https://nominatim.openstreetmap.org/reverse?…`                        | Reverse geocoding (geolocate + map click)                                       | —                |
 
 **Note on region codes:** RIKSIT uses **Kemendagri** codes (`32.10.07.1008`
 style) which are **identical** to BMKG's `adm4` parameter. Avoid EMSIFA's
@@ -175,9 +180,9 @@ Leaflet instance is mounted at a time (Leaflet dislikes hidden containers).
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `GEMINI_API_KEY` | optional* | Google Generative AI key. Used **server-side only**, never exposed to the browser. If absent or quota-exhausted, the app automatically uses its deterministic fallback insight. |
+| Variable         | Required   | Description                                                                                                                                                                     |
+| ---------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` | optional\* | Google Generative AI key. Used **server-side only**, never exposed to the browser. If absent or quota-exhausted, the app automatically uses its deterministic fallback insight. |
 
 \* Technically optional. The app still runs without a key — the InsightCard
 just shows `via fallback` and uses the deterministic generator.

@@ -28,9 +28,7 @@ export default function CardShell({
           <span className="truncate">{title}</span>
         </h2>
         {hint ? (
-          <span className="text-[9px] font-mono text-riksit-muted truncate ml-2">
-            {hint}
-          </span>
+          <span className="text-[9px] font-mono text-riksit-muted truncate ml-2">{hint}</span>
         ) : null}
       </header>
       <div

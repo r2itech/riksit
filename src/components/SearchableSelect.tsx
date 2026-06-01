@@ -47,10 +47,7 @@ export default function SearchableSelect({
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
 
-  const selected = useMemo(
-    () => options.find((o) => o.code === value) ?? null,
-    [options, value],
-  );
+  const selected = useMemo(() => options.find((o) => o.code === value) ?? null, [options, value]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -73,10 +70,7 @@ export default function SearchableSelect({
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false);
         setQuery("");
       }
@@ -88,9 +82,7 @@ export default function SearchableSelect({
   // Keep the highlighted item in view while arrow-navigating.
   useEffect(() => {
     if (!open || !listRef.current) return;
-    const el = listRef.current.querySelector<HTMLLIElement>(
-      `[data-idx="${highlight}"]`,
-    );
+    const el = listRef.current.querySelector<HTMLLIElement>(`[data-idx="${highlight}"]`);
     if (el) el.scrollIntoView({ block: "nearest" });
   }, [highlight, open]);
 
@@ -130,7 +122,7 @@ export default function SearchableSelect({
     }
   };
 
-  const displayValue = open ? query : selected?.name ?? "";
+  const displayValue = open ? query : (selected?.name ?? "");
 
   return (
     <div ref={containerRef} className="relative">
@@ -172,9 +164,7 @@ export default function SearchableSelect({
           "
         >
           {filtered.length === 0 ? (
-            <li className="px-2 py-1.5 text-[10px] text-riksit-muted">
-              Tidak ada hasil
-            </li>
+            <li className="px-2 py-1.5 text-[10px] text-riksit-muted">Tidak ada hasil</li>
           ) : (
             filtered.map((opt, i) => {
               const active = i === highlight;

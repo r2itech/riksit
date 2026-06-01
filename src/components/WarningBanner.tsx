@@ -26,9 +26,7 @@ export default function WarningBanner({ warnings }: Props) {
                 Peringatan Dini
               </div>
               <div className="text-sm text-riksit-ink">{w.headline}</div>
-              <div className="text-[11px] font-mono text-riksit-muted mt-0.5">
-                {w.description}
-              </div>
+              <div className="text-[11px] font-mono text-riksit-muted mt-0.5">{w.description}</div>
             </div>
           ))}
         </div>

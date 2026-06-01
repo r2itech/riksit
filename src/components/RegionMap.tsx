@@ -1,18 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  CircleMarker,
-  MapContainer,
-  Popup,
-  TileLayer,
-  useMap,
-  useMapEvents,
-} from "react-leaflet";
-import type {
-  LeafletEventHandlerFnMap,
-  LeafletMouseEvent,
-} from "leaflet";
+import { CircleMarker, MapContainer, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
+import type { LeafletEventHandlerFnMap, LeafletMouseEvent } from "leaflet";
 import type { EnvironmentalSnapshot } from "@/lib/types";
 import { pm25Band } from "@/lib/open-meteo";
 
@@ -36,11 +26,7 @@ function Recenter({ lat, lon }: { lat: number; lon: number }) {
  * Stable click handler. Memoized handler object so react-leaflet's
  * useMapEvents doesn't detach/reattach the listener on every render.
  */
-function ClickHandler({
-  onPick,
-}: {
-  onPick: (lat: number, lon: number) => void;
-}) {
+function ClickHandler({ onPick }: { onPick: (lat: number, lon: number) => void }) {
   const onPickRef = useRef(onPick);
   useEffect(() => {
     onPickRef.current = onPick;
@@ -74,10 +60,7 @@ export default function RegionMap({ snapshot, onPick, resolving }: Props) {
   const [pending, setPending] = useState<[number, number] | null>(null);
   useEffect(() => {
     if (!pending) return;
-    if (
-      Math.abs(pending[0] - center[0]) < 0.02 &&
-      Math.abs(pending[1] - center[1]) < 0.02
-    ) {
+    if (Math.abs(pending[0] - center[0]) < 0.02 && Math.abs(pending[1] - center[1]) < 0.02) {
       setPending(null);
     }
   }, [pending, center]);
@@ -158,9 +141,7 @@ export default function RegionMap({ snapshot, onPick, resolving }: Props) {
           aria-live="polite"
         >
           <span className="h-1.5 w-1.5 rounded-full bg-riksit-cyan animate-ping" />
-          <span className="text-[10px] font-mono text-riksit-cyan">
-            Memuat wilayah...
-          </span>
+          <span className="text-[10px] font-mono text-riksit-cyan">Memuat wilayah...</span>
         </div>
       ) : null}
     </div>

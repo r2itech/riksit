@@ -14,10 +14,7 @@ interface Props {
 }
 
 export default function InsightCard({ insight, loading, error, regionLabel }: Props) {
-  const html = useMemo(
-    () => (insight?.text ? renderMarkdown(insight.text) : ""),
-    [insight?.text],
-  );
+  const html = useMemo(() => (insight?.text ? renderMarkdown(insight.text) : ""), [insight?.text]);
 
   return (
     <section className="glass-strong relative animate-fade-in overflow-hidden flex flex-col min-h-0 h-full">
@@ -41,16 +38,12 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
               </h2>
               <SparkIcon size={14} className="text-riksit-cyan shrink-0" />
             </div>
-            <p className="text-[11px] font-mono text-riksit-muted mt-0.5 truncate">
-              {regionLabel}
-            </p>
+            <p className="text-[11px] font-mono text-riksit-muted mt-0.5 truncate">{regionLabel}</p>
           </div>
         </div>
         {insight ? (
           <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase tracking-wider text-riksit-muted">
-              Generated
-            </div>
+            <div className="text-[10px] uppercase tracking-wider text-riksit-muted">Generated</div>
             <div className="font-mono text-[11px] text-riksit-ink">
               {formatLocalTimestamp(insight.generatedAt)}
             </div>

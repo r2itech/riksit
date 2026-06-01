@@ -166,7 +166,10 @@ export function SparkIcon(props: IconProps) {
 }
 
 /** Pick a representative icon for a BMKG weather code. */
-export function pickWeatherIcon(code: number, desc: string | undefined): (p: IconProps) => JSX.Element {
+export function pickWeatherIcon(
+  code: number,
+  desc: string | undefined,
+): (p: IconProps) => JSX.Element {
   const d = (desc ?? "").toLowerCase();
   if (/petir|thunder|badai/.test(d)) return ThunderIcon;
   if (/hujan|rain/.test(d)) return RainIcon;

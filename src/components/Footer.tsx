@@ -11,12 +11,14 @@ export default function Footer() {
           </span>
         </div>
         <div className="font-mono">
-          Data:{" "}
-          <span className="text-riksit-neon">BMKG</span> ·{" "}
+          Data: <span className="text-riksit-neon">BMKG</span> ·{" "}
           <span className="text-riksit-neon">Open-Meteo</span> ·{" "}
           <span className="text-riksit-neon">wilayah.id</span> ·{" "}
           <span className="text-riksit-neon">OSM</span>
-          <span className="hidden md:inline text-riksit-muted/70"> · © {new Date().getFullYear()} RIKSIT</span>
+          <span className="hidden md:inline text-riksit-muted/70">
+            {" "}
+            · © {new Date().getFullYear()} RIKSIT
+          </span>
         </div>
       </div>
     </footer>

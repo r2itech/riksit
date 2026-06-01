@@ -3,10 +3,7 @@
 import dynamic from "next/dynamic";
 import { MapIcon } from "@/lib/icons";
 import { Skeleton } from "./Skeleton";
-import RegionSelector, {
-  type RegionIds,
-  type RegionResolved,
-} from "./RegionSelector";
+import RegionSelector, { type RegionIds, type RegionResolved } from "./RegionSelector";
 import type { EnvironmentalSnapshot } from "@/lib/types";
 
 const RegionMap = dynamic(() => import("./RegionMap"), {

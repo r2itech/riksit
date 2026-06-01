@@ -221,4 +221,3 @@ export async function getEarlyWarnings(weather: BmkgWeather | null) {
     },
   ];
 }
-

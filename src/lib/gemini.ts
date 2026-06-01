@@ -8,11 +8,7 @@ import { pm25Band } from "./open-meteo";
 // Gemini free-tier quotas are PER-MODEL, so on 429 we try the next model in
 // the chain before giving up to the deterministic fallback. Order is
 // best-quality → cheapest.
-const MODEL_CHAIN = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-2.0-flash",
-] as const;
+const MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"] as const;
 
 const REQUEST_TIMEOUT_MS = 18_000;
 
@@ -83,8 +79,7 @@ function summarizeSnapshot(s: EnvironmentalSnapshot): string {
   }
   if (s.warnings.length > 0) {
     lines.push(
-      "Peringatan aktif: " +
-        s.warnings.map((w) => `${w.headline} — ${w.description}`).join(" | "),
+      "Peringatan aktif: " + s.warnings.map((w) => `${w.headline} — ${w.description}`).join(" | "),
     );
   }
   return lines.join("\n");
@@ -99,16 +94,9 @@ type ModelCallResult =
   | { ok: true; text: string }
   | { ok: false; retryable: boolean; status?: number };
 
-async function callModel(
-  model: string,
-  key: string,
-  body: unknown,
-): Promise<ModelCallResult> {
+async function callModel(model: string, key: string, body: unknown): Promise<ModelCallResult> {
   const ctrl = new AbortController();
-  const timer = setTimeout(
-    () => ctrl.abort(new Error("timeout")),
-    REQUEST_TIMEOUT_MS,
-  );
+  const timer = setTimeout(() => ctrl.abort(new Error("timeout")), REQUEST_TIMEOUT_MS);
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
   try {
     const res = await fetch(endpoint, {
@@ -127,8 +115,7 @@ async function callModel(
       // 400 → bad request; same prompt won't work on any other model either.
       // 429 → quota; another model has its own quota, try next.
       // 5xx / network → transient; try next as defence in depth.
-      const retryable =
-        res.status === 429 || res.status === 408 || res.status >= 500;
+      const retryable = res.status === 429 || res.status === 408 || res.status >= 500;
       return { ok: false, retryable, status: res.status };
     }
     const data = (await res.json()) as GeminiResponse;
@@ -147,9 +134,7 @@ async function callModel(
   }
 }
 
-export async function generateInsight(
-  snapshot: EnvironmentalSnapshot,
-): Promise<InsightPayload> {
+export async function generateInsight(snapshot: EnvironmentalSnapshot): Promise<InsightPayload> {
   const key = sanitizeKey(process.env.GEMINI_API_KEY);
   const context = summarizeSnapshot(snapshot);
   const generatedAt = new Date().toISOString();
@@ -198,15 +183,20 @@ function buildFallback(s: EnvironmentalSnapshot): string {
   const recs: string[] = [];
 
   if (now) {
-    if (now.t >= 33) risks.push(`Suhu cukup tinggi (**${now.t}°C**) — risiko *dehidrasi* meningkat.`);
+    if (now.t >= 33)
+      risks.push(`Suhu cukup tinggi (**${now.t}°C**) — risiko *dehidrasi* meningkat.`);
     if (now.hu >= 85) risks.push(`Kelembapan tinggi (**${now.hu}%**) — kenyamanan termal menurun.`);
     if (/hujan|petir|badai/i.test(now.weather_desc))
       risks.push(`Potensi **${now.weather_desc.toLowerCase()}** di wilayah ${region}.`);
     if (now.ws >= 25) risks.push(`Angin kencang (**${now.ws} km/jam**).`);
   }
   if (s.airQuality?.pm2_5 != null && s.airQuality.pm2_5 > 35) {
-    risks.push(`Kualitas udara **${band.label}** (PM2.5 *${s.airQuality.pm2_5.toFixed(1)} µg/m³*).`);
-    recs.push("Gunakan **masker** saat beraktivitas di luar ruangan, terutama untuk kelompok rentan.");
+    risks.push(
+      `Kualitas udara **${band.label}** (PM2.5 *${s.airQuality.pm2_5.toFixed(1)} µg/m³*).`,
+    );
+    recs.push(
+      "Gunakan **masker** saat beraktivitas di luar ruangan, terutama untuk kelompok rentan.",
+    );
   } else if (s.airQuality?.pm2_5 != null) {
     recs.push(`Kualitas udara **${band.label}** — aman untuk aktivitas luar ruangan normal.`);
   }
@@ -223,7 +213,9 @@ function buildFallback(s: EnvironmentalSnapshot): string {
     recs.push("Pantau kanal informasi resmi **BMKG** dan **BPBD** setempat.");
   }
   if (recs.length === 0) {
-    recs.push("Lanjutkan aktivitas seperti biasa dengan tetap menjaga **hidrasi** dan **perlindungan UV**.");
+    recs.push(
+      "Lanjutkan aktivitas seperti biasa dengan tetap menjaga **hidrasi** dan **perlindungan UV**.",
+    );
   }
   if (risks.length === 0) risks.push("Tidak ada risiko signifikan yang terdeteksi.");
 

@@ -11,11 +11,7 @@ interface Props {
   lastChecked: string | null;
 }
 
-export default function EarthquakeCard({
-  earthquake,
-  loading,
-  lastChecked,
-}: Props) {
+export default function EarthquakeCard({ earthquake, loading, lastChecked }: Props) {
   if (loading) {
     return (
       <CardShell title="Gempa Terbaru" icon={<BoltIcon size={14} />}>
@@ -27,9 +23,7 @@ export default function EarthquakeCard({
   if (!earthquake) {
     return (
       <CardShell title="Gempa Terbaru" icon={<BoltIcon size={14} />}>
-        <p className="text-sm text-riksit-muted">
-          Tidak ada data gempa terbaru.
-        </p>
+        <p className="text-sm text-riksit-muted">Tidak ada data gempa terbaru.</p>
       </CardShell>
     );
   }

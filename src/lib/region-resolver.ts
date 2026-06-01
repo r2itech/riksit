@@ -2,13 +2,7 @@
 // specific admin region match. Used by the map's click-to-select handler.
 "use client";
 
-import {
-  getDistricts,
-  getProvinces,
-  getRegencies,
-  getVillages,
-  normalizeName,
-} from "./region-api";
+import { getDistricts, getProvinces, getRegencies, getVillages, normalizeName } from "./region-api";
 import { reverseGeocode } from "./nominatim";
 
 // ISO 3166-2:ID → wilayah.id province code. Nominatim always emits this field,
@@ -67,10 +61,7 @@ export interface ResolvedRegion {
   exact: boolean;
 }
 
-function findByName<T extends { name: string }>(
-  list: T[],
-  target: string | null,
-): T | undefined {
+function findByName<T extends { name: string }>(list: T[], target: string | null): T | undefined {
   if (!target) return undefined;
   const t = normalizeName(target);
   if (!t) return undefined;

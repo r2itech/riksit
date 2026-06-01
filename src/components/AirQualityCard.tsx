@@ -50,9 +50,7 @@ export default function AirQualityCard({ airQuality, loading }: Props) {
             <span className="font-mono text-[10px] text-riksit-muted">µg/m³</span>
           </div>
         </div>
-        <span
-          className={`px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${tone}`}
-        >
+        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${tone}`}>
           {band.label}
         </span>
       </div>

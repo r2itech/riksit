@@ -68,7 +68,16 @@ export default function RegionSelector({ initial, selected: external, onChange }
     const d = districts.find((x) => x.code === districtCode) ?? null;
     const v = villages.find((x) => x.code === villageCode) ?? null;
     return { p, r, d, v };
-  }, [provinces, regencies, districts, villages, provinceCode, regencyCode, districtCode, villageCode]);
+  }, [
+    provinces,
+    regencies,
+    districts,
+    villages,
+    provinceCode,
+    regencyCode,
+    districtCode,
+    villageCode,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -205,9 +214,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
             fallback();
             return;
           }
-          const prov = provinces.find(
-            (p) => normalize(p.name) === normalize(province),
-          );
+          const prov = provinces.find((p) => normalize(p.name) === normalize(province));
           if (!prov) {
             fallback();
             return;

@@ -63,8 +63,7 @@ export function pm25Band(pm: number | null): {
   label: string;
   tone: "good" | "moderate" | "unhealthy" | "veryUnhealthy" | "hazardous" | "unknown";
 } {
-  if (pm === null || !Number.isFinite(pm))
-    return { label: "Tidak Tersedia", tone: "unknown" };
+  if (pm === null || !Number.isFinite(pm)) return { label: "Tidak Tersedia", tone: "unknown" };
   if (pm <= 12) return { label: "Baik", tone: "good" };
   if (pm <= 35.4) return { label: "Sedang", tone: "moderate" };
   if (pm <= 55.4) return { label: "Tidak Sehat", tone: "unhealthy" };

@@ -1,13 +1,7 @@
 "use client";
 
 import CardShell from "./CardShell";
-import {
-  DropIcon,
-  PulseIcon,
-  ThermometerIcon,
-  WindIcon,
-  pickWeatherIcon,
-} from "@/lib/icons";
+import { DropIcon, PulseIcon, ThermometerIcon, WindIcon, pickWeatherIcon } from "@/lib/icons";
 import type { BmkgWeather } from "@/lib/types";
 import { Skeleton } from "./Skeleton";
 
@@ -46,11 +40,7 @@ export default function WeatherCard({ weather, loading }: Props) {
   const Icon = pickWeatherIcon(sample.weather, sample.weather_desc);
   const updated = formatLocalTime(sample.datetime);
   return (
-    <CardShell
-      title="Cuaca Saat Ini"
-      icon={<PulseIcon size={14} />}
-      hint={`upd ${updated}`}
-    >
+    <CardShell title="Cuaca Saat Ini" icon={<PulseIcon size={14} />} hint={`upd ${updated}`}>
       <div className="flex items-center gap-2.5">
         <div className="grid place-items-center w-11 h-11 rounded-full bg-riksit-neon/10 ring-1 ring-riksit-neon/30 text-riksit-neon shadow-glow shrink-0">
           <Icon size={24} />
@@ -66,11 +56,7 @@ export default function WeatherCard({ weather, loading }: Props) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5 mt-2">
-        <Stat
-          icon={<DropIcon size={12} />}
-          label="Lembap"
-          value={`${Math.round(sample.hu)}%`}
-        />
+        <Stat icon={<DropIcon size={12} />} label="Lembap" value={`${Math.round(sample.hu)}%`} />
         <Stat
           icon={<WindIcon size={12} />}
           label="Angin"
@@ -86,15 +72,7 @@ export default function WeatherCard({ weather, loading }: Props) {
   );
 }
 
-function Stat({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
+function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-1 min-w-0">
       <div className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-riksit-muted">

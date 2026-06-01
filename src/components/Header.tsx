@@ -17,9 +17,7 @@ export default function Header({ live, regionLabel }: Props) {
           </span>
           <div className="leading-tight min-w-0">
             <div className="flex items-center gap-2">
-              <h1 className="font-semibold tracking-[0.25em] text-riksit-ink text-base">
-                RIKSIT
-              </h1>
+              <h1 className="font-semibold tracking-[0.25em] text-riksit-ink text-base">RIKSIT</h1>
               <span className="hidden sm:inline text-[10px] font-mono text-riksit-muted uppercase">
                 Environmental AI
               </span>

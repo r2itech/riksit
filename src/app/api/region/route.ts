@@ -36,7 +36,9 @@ export async function GET(req: Request) {
 
   if (!(kind in KIND_PARENT_PATTERN)) {
     return NextResponse.json(
-      { error: "Parameter `kind` harus salah satu dari: provinces, regencies, districts, villages." },
+      {
+        error: "Parameter `kind` harus salah satu dari: provinces, regencies, districts, villages.",
+      },
       { status: 400 },
     );
   }
@@ -55,7 +57,8 @@ export async function GET(req: Request) {
     );
   }
 
-  const upstream = kind === "provinces" ? `${BASE}/provinces.json` : `${BASE}/${kind}/${parent}.json`;
+  const upstream =
+    kind === "provinces" ? `${BASE}/provinces.json` : `${BASE}/${kind}/${parent}.json`;
   const cacheKey = `wilayah:${kind}:${parent}`;
 
   try {

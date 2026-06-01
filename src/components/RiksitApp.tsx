@@ -34,9 +34,7 @@ export default function RiksitApp() {
   // first render, avoiding a race with the cascading dropdowns.
   const [mounted, setMounted] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-  const [initialRegion, setInitialRegion] = useState<
-    Partial<RegionIds> | undefined
-  >(undefined);
+  const [initialRegion, setInitialRegion] = useState<Partial<RegionIds> | undefined>(undefined);
   const [region, setRegion] = useState<RegionResolved | null>(null);
   const [snapshot, setSnapshot] = useState<EnvironmentalSnapshot | null>(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
@@ -44,9 +42,7 @@ export default function RiksitApp() {
   const [insight, setInsight] = useState<InsightPayload | null>(null);
   const [insightLoading, setInsightLoading] = useState(false);
   const [insightError, setInsightError] = useState<string | null>(null);
-  const [earthquakeCheckedAt, setEarthquakeCheckedAt] = useState<string | null>(
-    null,
-  );
+  const [earthquakeCheckedAt, setEarthquakeCheckedAt] = useState<string | null>(null);
   const [mapResolving, setMapResolving] = useState(false);
 
   const snapshotAbortRef = useRef<AbortController | null>(null);
@@ -114,9 +110,7 @@ export default function RiksitApp() {
           .catch((err: unknown) => {
             if (insCtrl.signal.aborted) return;
             console.warn("[insight] failed", err);
-            setInsightError(
-              err instanceof Error ? err.message : "Unknown error",
-            );
+            setInsightError(err instanceof Error ? err.message : "Unknown error");
             setInsightLoading(false);
           });
       })
@@ -336,22 +330,13 @@ export default function RiksitApp() {
           "
           >
             <div className="pointer-events-auto flex-1 min-h-0">
-              <WeatherCard
-                weather={snapshot?.weather ?? null}
-                loading={snapshotLoading}
-              />
+              <WeatherCard weather={snapshot?.weather ?? null} loading={snapshotLoading} />
             </div>
             <div className="pointer-events-auto flex-1 min-h-0">
-              <ForecastCard
-                forecast={snapshot?.forecast ?? []}
-                loading={snapshotLoading}
-              />
+              <ForecastCard forecast={snapshot?.forecast ?? []} loading={snapshotLoading} />
             </div>
             <div className="pointer-events-auto flex-1 min-h-0">
-              <AirQualityCard
-                airQuality={snapshot?.airQuality ?? null}
-                loading={snapshotLoading}
-              />
+              <AirQualityCard airQuality={snapshot?.airQuality ?? null} loading={snapshotLoading} />
             </div>
             <div className="pointer-events-auto flex-1 min-h-0">
               <EarthquakeCard
@@ -396,18 +381,9 @@ export default function RiksitApp() {
           />
 
           <div className="grid grid-cols-2 gap-3">
-            <WeatherCard
-              weather={snapshot?.weather ?? null}
-              loading={snapshotLoading}
-            />
-            <ForecastCard
-              forecast={snapshot?.forecast ?? []}
-              loading={snapshotLoading}
-            />
-            <AirQualityCard
-              airQuality={snapshot?.airQuality ?? null}
-              loading={snapshotLoading}
-            />
+            <WeatherCard weather={snapshot?.weather ?? null} loading={snapshotLoading} />
+            <ForecastCard forecast={snapshot?.forecast ?? []} loading={snapshotLoading} />
+            <AirQualityCard airQuality={snapshot?.airQuality ?? null} loading={snapshotLoading} />
             <EarthquakeCard
               earthquake={snapshot?.earthquake ?? null}
               loading={snapshotLoading}

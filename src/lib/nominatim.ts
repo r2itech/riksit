@@ -39,11 +39,7 @@ export interface ReverseHit {
  * Indonesia in OSM Nominatim ('village' field). Lower zoom collapses to
  * regency / state only.
  */
-export async function reverseGeocode(
-  lat: number,
-  lon: number,
-  zoom = 15,
-): Promise<ReverseHit> {
+export async function reverseGeocode(lat: number, lon: number, zoom = 15): Promise<ReverseHit> {
   const url =
     `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}` +
     `&format=json&accept-language=id&zoom=${zoom}&addressdetails=1`;

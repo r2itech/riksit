@@ -1,10 +1,5 @@
 import { NextResponse } from "next/server";
-import {
-  buildForecast,
-  getBmkgWeather,
-  getEarlyWarnings,
-  getLatestEarthquake,
-} from "@/lib/bmkg";
+import { buildForecast, getBmkgWeather, getEarlyWarnings, getLatestEarthquake } from "@/lib/bmkg";
 import { getAirQuality } from "@/lib/open-meteo";
 import { isVillageCode, type EnvironmentalSnapshot } from "@/lib/types";
 
