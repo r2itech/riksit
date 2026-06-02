@@ -4,6 +4,7 @@ import CardShell from "./CardShell";
 import { DropIcon, PulseIcon, ThermometerIcon, WindIcon, pickWeatherIcon } from "@/lib/icons";
 import type { BmkgWeather } from "@/lib/types";
 import { Skeleton } from "./Skeleton";
+import { useT } from "./LocaleProvider";
 
 interface Props {
   weather: BmkgWeather | null;
@@ -11,9 +12,10 @@ interface Props {
 }
 
 export default function WeatherCard({ weather, loading }: Props) {
+  const t = useT();
   if (loading) {
     return (
-      <CardShell title="Cuaca Saat Ini" icon={<PulseIcon size={14} />}>
+      <CardShell title={t("weather.title")} icon={<PulseIcon size={14} />}>
         <Skeleton className="h-3 w-40 mb-3" />
         <div className="flex items-center gap-4">
           <Skeleton className="h-16 w-16 rounded-full" />
@@ -29,10 +31,8 @@ export default function WeatherCard({ weather, loading }: Props) {
   const sample = weather?.samples[0] ?? null;
   if (!sample || !weather) {
     return (
-      <CardShell title="Cuaca Saat Ini" icon={<PulseIcon size={14} />}>
-        <p className="text-sm text-riksit-muted">
-          Data cuaca BMKG tidak tersedia untuk wilayah ini.
-        </p>
+      <CardShell title={t("weather.title")} icon={<PulseIcon size={14} />}>
+        <p className="text-sm text-riksit-muted">{t("weather.unavailable")}</p>
       </CardShell>
     );
   }
@@ -40,7 +40,11 @@ export default function WeatherCard({ weather, loading }: Props) {
   const Icon = pickWeatherIcon(sample.weather, sample.weather_desc);
   const updated = formatLocalTime(sample.datetime);
   return (
-    <CardShell title="Cuaca Saat Ini" icon={<PulseIcon size={14} />} hint={`upd ${updated}`}>
+    <CardShell
+      title={t("weather.title")}
+      icon={<PulseIcon size={14} />}
+      hint={`${t("weather.update")} ${updated}`}
+    >
       <div className="flex items-center gap-2.5">
         <div className="grid place-items-center w-11 h-11 rounded-full bg-riksit-neon/10 ring-1 ring-riksit-neon/30 text-riksit-neon shadow-glow shrink-0">
           <Icon size={24} />
@@ -56,15 +60,19 @@ export default function WeatherCard({ weather, loading }: Props) {
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5 mt-2">
-        <Stat icon={<DropIcon size={12} />} label="Lembap" value={`${Math.round(sample.hu)}%`} />
+        <Stat
+          icon={<DropIcon size={12} />}
+          label={t("weather.humidity")}
+          value={`${Math.round(sample.hu)}%`}
+        />
         <Stat
           icon={<WindIcon size={12} />}
-          label="Angin"
+          label={t("weather.wind")}
           value={`${Math.round(sample.ws)} ${sample.wd}`}
         />
         <Stat
           icon={<ThermometerIcon size={12} />}
-          label="Awan"
+          label={t("weather.cloud")}
           value={`${Math.round(sample.tcc)}%`}
         />
       </div>

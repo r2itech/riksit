@@ -1,0 +1,5 @@
+# Force LF line endings in the working tree for all auto-detected text files.
+# Matches `endOfLine: "lf"` in .prettierrc and the Ubuntu CI runner, so files
+# don't oscillate between CRLF and LF based on each contributor's
+# core.autocrlf setting on Windows.
+* text=auto eol=lf

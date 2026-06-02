@@ -1,5 +1,10 @@
+import { LocaleProvider } from "@/components/LocaleProvider";
 import RiksitApp from "@/components/RiksitApp";
 
 export default function HomePage() {
-  return <RiksitApp />;
+  return (
+    <LocaleProvider>
+      <RiksitApp />
+    </LocaleProvider>
+  );
 }

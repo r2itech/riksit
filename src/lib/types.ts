@@ -137,5 +137,5 @@ export interface EnvironmentalSnapshot {
 export interface InsightPayload {
   generatedAt: string;
   text: string;
-  source: "gemini" | "fallback";
+  source: "gemini" | "groq" | "fallback";
 }
