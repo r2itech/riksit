@@ -71,6 +71,12 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - Server-side cache of 60 seconds on `autogempa.json` → at most one upstream request per 90 seconds per server instance.
 - A "Last check" timestamp is shown on the earthquake card.
 
+### Source link
+
+- A small **GitHub icon button** in the header opens the project's source repository in a new tab (`target="_blank"`, `rel="noopener noreferrer"` for the standard tabnabbing-safe defaults).
+- The link's accessible label is localized (`Lihat kode sumber di GitHub` / `View source on GitHub`); the icon itself is visual-only.
+- Repo URL is pinned in `src/components/Header.tsx` (`GITHUB_URL`) — open-source so the canonical web URL is stable.
+
 ### Localization (i18n)
 
 - **Two locales**: Bahasa Indonesia (`id-ID`, default) and English (`en-US`).
