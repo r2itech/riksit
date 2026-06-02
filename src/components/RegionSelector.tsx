@@ -282,7 +282,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
     return () => {
       active = false;
     };
-  }, [provinces, initial]);
+  }, [provinces, initial, t]);
 
   const handleProvince = (code: string) => {
     setProvinceCode(code);
