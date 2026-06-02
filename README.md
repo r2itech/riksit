@@ -71,6 +71,12 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - Server-side cache of 60 seconds on `autogempa.json` → at most one upstream request per 90 seconds per server instance.
 - A "Last check" timestamp is shown on the earthquake card.
 
+### AI accuracy disclaimer
+
+- On every launch and refresh, a modal reminds users that the AI-generated insight is **not always 100% accurate** and does not replace official information from BMKG, BPBD, or local authorities.
+- Dismissed in-session by clicking "Saya Mengerti" or pressing <kbd>Esc</kbd>; no localStorage flag, so the acknowledgment is intentionally not remembered between sessions — users see the disclaimer every time they reload the app.
+- Modal locks page scroll and focuses the acknowledge button so it's both visually and keyboard-accessible.
+
 ---
 
 ## Data Sources
@@ -318,6 +324,7 @@ src/
     SearchableSelect.tsx    # custom combobox (filter + arrow nav)
     MapPanel.tsx            # wrapper around RegionMap (bare / withSelector variant)
     RegionMap.tsx           # Leaflet map + click handler
+    DisclaimerModal.tsx     # AI accuracy disclaimer (shown every launch, no persistence)
     InsightCard.tsx         # markdown render + skeleton
     WeatherCard.tsx         # current weather
     ForecastCard.tsx        # 3-day forecast
