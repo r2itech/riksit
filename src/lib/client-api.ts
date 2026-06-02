@@ -1,6 +1,7 @@
 "use client";
 
 import type { Earthquake, EnvironmentalSnapshot, InsightPayload } from "./types";
+import type { Locale } from "./i18n";
 import { fetchJson } from "./fetcher";
 
 export interface EarthquakeResponse {
@@ -42,12 +43,13 @@ export async function fetchSnapshot(params: {
 
 export async function fetchInsight(
   snapshot: EnvironmentalSnapshot,
+  locale: Locale,
   signal?: AbortSignal,
 ): Promise<InsightPayload> {
   const res = await fetch(`/api/insight`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ snapshot }),
+    body: JSON.stringify({ snapshot, locale }),
     signal,
     cache: "no-store",
   });

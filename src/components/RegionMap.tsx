@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CircleMarker, MapContainer, Popup, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import type { LeafletEventHandlerFnMap, LeafletMouseEvent } from "leaflet";
 import type { EnvironmentalSnapshot } from "@/lib/types";
-import { pm25Band } from "@/lib/open-meteo";
+import { pm25Band, pm25BandLabel } from "@/lib/open-meteo";
+import { useLocale } from "./LocaleProvider";
 
 interface Props {
   snapshot: EnvironmentalSnapshot;
@@ -46,6 +47,7 @@ function ClickHandler({ onPick }: { onPick: (lat: number, lon: number) => void }
 }
 
 export default function RegionMap({ snapshot, onPick, resolving }: Props) {
+  const { locale } = useLocale();
   const { lat, lon } = snapshot.region;
   const center = useMemo<[number, number]>(
     () =>
@@ -114,7 +116,7 @@ export default function RegionMap({ snapshot, onPick, resolving }: Props) {
                 </div>
               ) : null}
               <div className="text-[11px] font-mono">
-                Udara: <span className="text-riksit-neon">{band.label}</span>
+                <span className="text-riksit-neon">{pm25BandLabel(band.tone, locale)}</span>
               </div>
             </div>
           </Popup>

@@ -1,7 +1,12 @@
 // Gemini provider config — read by `runProviderChain` in lib/ai/chain.ts.
 // Free-tier quotas are per-model, so the chain falls through on 429.
 import type { AIProvider } from "./chain";
-import { SYSTEM_PROMPT, summarizeSnapshot } from "./prompt";
+import {
+  getContextHeader,
+  getSystemPrompt,
+  getUserCallToAction,
+  summarizeSnapshot,
+} from "./prompt";
 
 interface GeminiResponse {
   candidates?: Array<{
@@ -16,15 +21,15 @@ export const geminiProvider: AIProvider = {
   endpoint: (model) =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
   authHeader: (key) => ({ "x-goog-api-key": key }),
-  buildBody: (_model, snapshot) => ({
+  buildBody: (_model, snapshot, locale) => ({
     contents: [
       {
         role: "user",
         parts: [
           {
             text:
-              `${SYSTEM_PROMPT}\n\nData lingkungan saat ini:\n${summarizeSnapshot(snapshot)}\n\n` +
-              `Berdasarkan data di atas, susun wawasan lingkungan untuk warga setempat.`,
+              `${getSystemPrompt(locale)}\n\n${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}\n\n` +
+              getUserCallToAction(locale),
           },
         ],
       },

@@ -2,12 +2,14 @@
 
 import { ShieldIcon } from "@/lib/icons";
 import type { EarlyWarning } from "@/lib/types";
+import { useT } from "./LocaleProvider";
 
 interface Props {
   warnings: EarlyWarning[];
 }
 
 export default function WarningBanner({ warnings }: Props) {
+  const t = useT();
   if (warnings.length === 0) return null;
   return (
     <div
@@ -23,7 +25,7 @@ export default function WarningBanner({ warnings }: Props) {
           {warnings.map((w, idx) => (
             <div key={idx}>
               <div className="text-xs uppercase tracking-[0.18em] text-riksit-amber font-semibold">
-                Peringatan Dini
+                {t("warning.heading")}
               </div>
               <div className="text-sm text-riksit-ink">{w.headline}</div>
               <div className="text-[11px] font-mono text-riksit-muted mt-0.5">{w.description}</div>

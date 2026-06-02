@@ -10,6 +10,7 @@
 //   4. Add a label entry in `src/components/InsightCard.tsx` →
 //      `SOURCE_LABEL`. TypeScript will require it once step 3 is done.
 import type { EnvironmentalSnapshot, InsightPayload } from "../types";
+import type { Locale } from "../i18n";
 import { runProviderChain } from "./chain";
 import { buildFallback } from "./fallback";
 import { geminiProvider } from "./gemini";
@@ -17,14 +18,17 @@ import { groqProvider } from "./groq";
 
 const PROVIDERS = [geminiProvider, groqProvider] as const;
 
-export async function generateInsight(snapshot: EnvironmentalSnapshot): Promise<InsightPayload> {
+export async function generateInsight(
+  snapshot: EnvironmentalSnapshot,
+  locale: Locale,
+): Promise<InsightPayload> {
   for (const provider of PROVIDERS) {
-    const result = await runProviderChain(provider, snapshot);
+    const result = await runProviderChain(provider, snapshot, locale);
     if (result) return result;
   }
   return {
     generatedAt: new Date().toISOString(),
-    text: buildFallback(snapshot),
+    text: buildFallback(snapshot, locale),
     source: "fallback",
   };
 }

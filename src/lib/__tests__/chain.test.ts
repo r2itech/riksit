@@ -44,22 +44,22 @@ describe.each([
   afterEach(restore);
 
   it("returns null when the env var is undefined", async () => {
-    expect(await runProviderChain(provider, makeSnapshot())).toBeNull();
+    expect(await runProviderChain(provider, makeSnapshot(), "id-ID")).toBeNull();
   });
 
   it("returns null when the env var is an empty string", async () => {
     process.env[provider.envVar] = "";
-    expect(await runProviderChain(provider, makeSnapshot())).toBeNull();
+    expect(await runProviderChain(provider, makeSnapshot(), "id-ID")).toBeNull();
   });
 
   it("returns null when the env var is whitespace only", async () => {
     process.env[provider.envVar] = "   ";
-    expect(await runProviderChain(provider, makeSnapshot())).toBeNull();
+    expect(await runProviderChain(provider, makeSnapshot(), "en-US")).toBeNull();
   });
 
   it("returns null when the env var is just quotes (sanitized to empty)", async () => {
     process.env[provider.envVar] = `""`;
-    expect(await runProviderChain(provider, makeSnapshot())).toBeNull();
+    expect(await runProviderChain(provider, makeSnapshot(), "en-US")).toBeNull();
   });
 });
 
@@ -70,11 +70,19 @@ describe("generateInsight — orchestrator", () => {
   });
   afterEach(restore);
 
-  it("returns the deterministic fallback when every AI provider lacks a key", async () => {
-    const result = await generateInsight(makeSnapshot());
+  it("returns the deterministic fallback in id-ID when every AI provider lacks a key", async () => {
+    const result = await generateInsight(makeSnapshot(), "id-ID");
     expect(result.source).toBe("fallback");
     expect(result.text).toContain("## Ringkasan Kondisi");
     expect(result.text).toContain("## Potensi Risiko");
     expect(result.text).toContain("## Rekomendasi");
+  });
+
+  it("returns the deterministic fallback in en-US when every AI provider lacks a key", async () => {
+    const result = await generateInsight(makeSnapshot(), "en-US");
+    expect(result.source).toBe("fallback");
+    expect(result.text).toContain("## Current Conditions");
+    expect(result.text).toContain("## Potential Risks");
+    expect(result.text).toContain("## Recommendations");
   });
 });

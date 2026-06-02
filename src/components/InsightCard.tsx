@@ -5,6 +5,8 @@ import { LeafCircuitIcon, SparkIcon } from "@/lib/icons";
 import { renderMarkdown } from "@/lib/markdown";
 import type { InsightPayload } from "@/lib/types";
 import { Skeleton } from "./Skeleton";
+import { useLocale } from "./LocaleProvider";
+import type { DictKey } from "@/lib/i18n";
 
 interface Props {
   insight: InsightPayload | null;
@@ -13,14 +15,15 @@ interface Props {
   regionLabel: string;
 }
 
-// Exhaustive map — TS will surface a missing key if `InsightPayload["source"]` grows.
-const SOURCE_LABEL: Record<InsightPayload["source"], string> = {
-  gemini: "via Gemini",
-  groq: "via Groq",
-  fallback: "via fallback",
+// Exhaustive map — TS will surface a missing dict key if `InsightPayload["source"]` grows.
+const SOURCE_LABEL_KEY: Record<InsightPayload["source"], DictKey> = {
+  gemini: "insight.source.gemini",
+  groq: "insight.source.groq",
+  fallback: "insight.source.fallback",
 };
 
 export default function InsightCard({ insight, loading, error, regionLabel }: Props) {
+  const { locale, t } = useLocale();
   const html = useMemo(() => (insight?.text ? renderMarkdown(insight.text) : ""), [insight?.text]);
 
   return (
@@ -41,7 +44,7 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
           <div className="min-w-0">
             <div className="flex items-center gap-2">
               <h2 className="text-sm sm:text-base font-semibold tracking-wide text-riksit-ink uppercase">
-                AI Environmental Insight
+                {t("insight.title")}
               </h2>
               <SparkIcon size={14} className="text-riksit-cyan shrink-0" />
             </div>
@@ -50,12 +53,14 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
         </div>
         {insight ? (
           <div className="text-right shrink-0">
-            <div className="text-[10px] uppercase tracking-wider text-riksit-muted">Generated</div>
+            <div className="text-[10px] uppercase tracking-wider text-riksit-muted">
+              {t("insight.generated")}
+            </div>
             <div className="font-mono text-[11px] text-riksit-ink">
-              {formatLocalTimestamp(insight.generatedAt)}
+              {formatLocalTimestamp(insight.generatedAt, locale)}
             </div>
             <div className="text-[10px] font-mono text-riksit-muted">
-              {SOURCE_LABEL[insight.source]}
+              {t(SOURCE_LABEL_KEY[insight.source])}
             </div>
           </div>
         ) : null}
@@ -74,7 +79,7 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
           </div>
         ) : error ? (
           <div className="text-sm text-riksit-danger" role="alert">
-            Gagal memuat wawasan: {error}
+            {t("insight.errorPrefix")}: {error}
           </div>
         ) : insight ? (
           <div
@@ -82,17 +87,17 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
             dangerouslySetInnerHTML={{ __html: html }}
           />
         ) : (
-          <p className="text-sm text-riksit-muted">Memuat wawasan...</p>
+          <p className="text-sm text-riksit-muted">{t("insight.loading")}</p>
         )}
       </div>
     </section>
   );
 }
 
-function formatLocalTimestamp(iso: string): string {
+function formatLocalTimestamp(iso: string, locale: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleTimeString("id-ID", {
+  return d.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

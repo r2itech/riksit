@@ -4,6 +4,7 @@ import CardShell from "./CardShell";
 import { BoltIcon } from "@/lib/icons";
 import type { Earthquake } from "@/lib/types";
 import { Skeleton } from "./Skeleton";
+import { useLocale } from "./LocaleProvider";
 
 interface Props {
   earthquake: Earthquake | null;
@@ -12,9 +13,10 @@ interface Props {
 }
 
 export default function EarthquakeCard({ earthquake, loading, lastChecked }: Props) {
+  const { locale, t } = useLocale();
   if (loading) {
     return (
-      <CardShell title="Gempa Terbaru" icon={<BoltIcon size={14} />}>
+      <CardShell title={t("earthquake.title")} icon={<BoltIcon size={14} />}>
         <Skeleton className="h-3 w-40 mb-3" />
         <Skeleton className="h-16 w-full" />
       </CardShell>
@@ -22,17 +24,17 @@ export default function EarthquakeCard({ earthquake, loading, lastChecked }: Pro
   }
   if (!earthquake) {
     return (
-      <CardShell title="Gempa Terbaru" icon={<BoltIcon size={14} />}>
-        <p className="text-sm text-riksit-muted">Tidak ada data gempa terbaru.</p>
+      <CardShell title={t("earthquake.title")} icon={<BoltIcon size={14} />}>
+        <p className="text-sm text-riksit-muted">{t("earthquake.unavailable")}</p>
       </CardShell>
     );
   }
   const mag = parseFloat(earthquake.magnitude);
   const intense = Number.isFinite(mag) && mag >= 5;
-  const checkedLabel = formatCheckedAt(lastChecked);
+  const checkedLabel = formatCheckedAt(lastChecked, locale);
   return (
     <CardShell
-      title="Gempa Terbaru"
+      title={t("earthquake.title")}
       icon={<BoltIcon size={14} />}
       hint={`${earthquake.tanggal} ${earthquake.jam}`}
     >
@@ -60,18 +62,19 @@ export default function EarthquakeCard({ earthquake, loading, lastChecked }: Pro
       <div className="flex items-center gap-1.5 mt-1.5 pt-1 border-t border-riksit-border/40">
         <span className="pulse-dot" aria-hidden="true" />
         <span className="text-[9px] font-mono text-riksit-muted truncate">
-          Last check{checkedLabel ? `: ${checkedLabel}` : ""}
+          {t("earthquake.lastCheck")}
+          {checkedLabel ? `: ${checkedLabel}` : ""}
         </span>
       </div>
     </CardShell>
   );
 }
 
-function formatCheckedAt(iso: string | null): string {
+function formatCheckedAt(iso: string | null, locale: string): string {
   if (!iso) return "";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
-  return d.toLocaleTimeString("id-ID", {
+  return d.toLocaleTimeString(locale, {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",

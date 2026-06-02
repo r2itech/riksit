@@ -8,6 +8,7 @@ import {
   useState,
   type KeyboardEvent as RKeyboardEvent,
 } from "react";
+import { useT } from "./LocaleProvider";
 
 export interface SearchableOption {
   code: string;
@@ -37,6 +38,7 @@ export default function SearchableSelect({
   onChange,
   disabled = false,
 }: Props) {
+  const t = useT();
   const reactId = useId();
   const listId = `${reactId}-list`;
   const containerRef = useRef<HTMLDivElement>(null);
@@ -164,7 +166,7 @@ export default function SearchableSelect({
           "
         >
           {filtered.length === 0 ? (
-            <li className="px-2 py-1.5 text-[10px] text-riksit-muted">Tidak ada hasil</li>
+            <li className="px-2 py-1.5 text-[10px] text-riksit-muted">{t("select.noResults")}</li>
           ) : (
             filtered.map((opt, i) => {
               const active = i === highlight;

@@ -1,7 +1,12 @@
 // Groq provider config — read by `runProviderChain` in lib/ai/chain.ts.
 // OpenAI-compatible chat/completions shape; auth via bearer token.
 import type { AIProvider } from "./chain";
-import { SYSTEM_PROMPT, summarizeSnapshot } from "./prompt";
+import {
+  getContextHeader,
+  getSystemPrompt,
+  getUserCallToAction,
+  summarizeSnapshot,
+} from "./prompt";
 
 interface GroqResponse {
   choices?: Array<{ message?: { content?: string } }>;
@@ -13,14 +18,14 @@ export const groqProvider: AIProvider = {
   modelChain: ["llama-3.3-70b-versatile", "gemma2-9b-it"],
   endpoint: () => "https://api.groq.com/openai/v1/chat/completions",
   authHeader: (key) => ({ Authorization: `Bearer ${key}` }),
-  buildBody: (model, snapshot) => {
+  buildBody: (model, snapshot, locale) => {
     const userPrompt =
-      `Data lingkungan saat ini:\n${summarizeSnapshot(snapshot)}\n\n` +
-      `Berdasarkan data di atas, susun wawasan lingkungan untuk warga setempat.`;
+      `${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}\n\n` +
+      getUserCallToAction(locale);
     return {
       model,
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: getSystemPrompt(locale) },
         { role: "user", content: userPrompt },
       ],
       temperature: 0.4,

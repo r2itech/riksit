@@ -2,6 +2,15 @@
 import type { AirQuality } from "./types";
 import { withCache } from "./cache";
 import { fetchJson } from "./fetcher";
+import { translate, type Locale } from "./i18n";
+
+export type Pm25Tone =
+  | "good"
+  | "moderate"
+  | "unhealthy"
+  | "veryUnhealthy"
+  | "hazardous"
+  | "unknown";
 
 const TEN_MIN = 10 * 60 * 1000;
 
@@ -59,14 +68,16 @@ export async function getAirQuality(lat: number, lon: number): Promise<AirQualit
 }
 
 /** Map PM2.5 (µg/m³) to a categorical band per WHO/Open-Meteo guidance. */
-export function pm25Band(pm: number | null): {
-  label: string;
-  tone: "good" | "moderate" | "unhealthy" | "veryUnhealthy" | "hazardous" | "unknown";
-} {
-  if (pm === null || !Number.isFinite(pm)) return { label: "Tidak Tersedia", tone: "unknown" };
-  if (pm <= 12) return { label: "Baik", tone: "good" };
-  if (pm <= 35.4) return { label: "Sedang", tone: "moderate" };
-  if (pm <= 55.4) return { label: "Tidak Sehat", tone: "unhealthy" };
-  if (pm <= 150.4) return { label: "Sangat Tidak Sehat", tone: "veryUnhealthy" };
-  return { label: "Berbahaya", tone: "hazardous" };
+export function pm25Band(pm: number | null): { tone: Pm25Tone } {
+  if (pm === null || !Number.isFinite(pm)) return { tone: "unknown" };
+  if (pm <= 12) return { tone: "good" };
+  if (pm <= 35.4) return { tone: "moderate" };
+  if (pm <= 55.4) return { tone: "unhealthy" };
+  if (pm <= 150.4) return { tone: "veryUnhealthy" };
+  return { tone: "hazardous" };
+}
+
+/** Locale-aware human-readable label for a PM2.5 tone. */
+export function pm25BandLabel(tone: Pm25Tone, locale: Locale): string {
+  return translate(locale, `airQuality.band.${tone}`);
 }
