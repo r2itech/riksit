@@ -2,16 +2,17 @@
 
 import CardShell from "./CardShell";
 import { WaveIcon } from "@/lib/icons";
-import { pm25Band } from "@/lib/open-meteo";
+import { pm25Band, pm25BandLabel, type Pm25Tone } from "@/lib/open-meteo";
 import type { AirQuality } from "@/lib/types";
 import { Skeleton } from "./Skeleton";
+import { useLocale } from "./LocaleProvider";
 
 interface Props {
   airQuality: AirQuality | null;
   loading: boolean;
 }
 
-const toneClass: Record<ReturnType<typeof pm25Band>["tone"], string> = {
+const toneClass: Record<Pm25Tone, string> = {
   good: "text-riksit-neon ring-riksit-neon/40 bg-riksit-neon/10",
   moderate: "text-riksit-amber ring-riksit-amber/40 bg-riksit-amber/10",
   unhealthy: "text-orange-300 ring-orange-300/40 bg-orange-300/10",
@@ -21,9 +22,10 @@ const toneClass: Record<ReturnType<typeof pm25Band>["tone"], string> = {
 };
 
 export default function AirQualityCard({ airQuality, loading }: Props) {
+  const { locale, t } = useLocale();
   if (loading) {
     return (
-      <CardShell title="Kualitas Udara" icon={<WaveIcon size={14} />}>
+      <CardShell title={t("airQuality.title")} icon={<WaveIcon size={14} />}>
         <Skeleton className="h-3 w-32 mb-2" />
         <Skeleton className="h-14 w-full" />
       </CardShell>
@@ -31,15 +33,15 @@ export default function AirQualityCard({ airQuality, loading }: Props) {
   }
   if (!airQuality) {
     return (
-      <CardShell title="Kualitas Udara" icon={<WaveIcon size={14} />}>
-        <p className="text-xs text-riksit-muted">Data tidak tersedia.</p>
+      <CardShell title={t("airQuality.title")} icon={<WaveIcon size={14} />}>
+        <p className="text-xs text-riksit-muted">{t("airQuality.unavailable")}</p>
       </CardShell>
     );
   }
   const band = pm25Band(airQuality.pm2_5);
   const tone = toneClass[band.tone];
   return (
-    <CardShell title="Kualitas Udara" icon={<WaveIcon size={14} />} hint="Open-Meteo">
+    <CardShell title={t("airQuality.title")} icon={<WaveIcon size={14} />} hint="Open-Meteo">
       <div className="flex items-center justify-between gap-2 mb-2">
         <div>
           <div className="text-[9px] uppercase tracking-wider text-riksit-muted">PM2.5</div>
@@ -51,7 +53,7 @@ export default function AirQualityCard({ airQuality, loading }: Props) {
           </div>
         </div>
         <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${tone}`}>
-          {band.label}
+          {pm25BandLabel(band.tone, locale)}
         </span>
       </div>
       <div className="grid grid-cols-3 gap-1.5">

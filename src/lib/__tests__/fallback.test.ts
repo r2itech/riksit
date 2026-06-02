@@ -44,9 +44,9 @@ function makeSnapshot(over: Partial<EnvironmentalSnapshot> = {}): EnvironmentalS
   };
 }
 
-describe("buildFallback", () => {
+describe("buildFallback — id-ID", () => {
   it("renders the three required headings", () => {
-    const md = buildFallback(makeSnapshot());
+    const md = buildFallback(makeSnapshot(), "id-ID");
     expect(md).toContain("## Ringkasan Kondisi");
     expect(md).toContain("## Potensi Risiko");
     expect(md).toContain("## Rekomendasi");
@@ -65,6 +65,7 @@ describe("buildFallback", () => {
           ],
         },
       }),
+      "id-ID",
     );
     expect(md).toMatch(/Suhu cukup tinggi/i);
     expect(md).toContain("35°C");
@@ -83,6 +84,7 @@ describe("buildFallback", () => {
           ],
         },
       }),
+      "id-ID",
     );
     expect(md).toMatch(/Kelembapan tinggi/i);
   });
@@ -100,6 +102,7 @@ describe("buildFallback", () => {
           ],
         },
       }),
+      "id-ID",
     );
     expect(md).toMatch(/hujan petir/i);
   });
@@ -109,6 +112,7 @@ describe("buildFallback", () => {
       makeSnapshot({
         airQuality: { pm2_5: 60, pm10: 70, no2: 10, o3: 40, time: null },
       }),
+      "id-ID",
     );
     expect(md).toMatch(/Tidak Sehat/);
     expect(md).toMatch(/masker/i);
@@ -130,6 +134,7 @@ describe("buildFallback", () => {
           potensi: "Tidak berpotensi tsunami",
         },
       }),
+      "id-ID",
     );
     expect(md).toMatch(/Gempa.*M5\.4/);
     expect(md).toMatch(/Tenggara Sumbawa/);
@@ -151,17 +156,18 @@ describe("buildFallback", () => {
           potensi: "Tidak berpotensi tsunami",
         },
       }),
+      "id-ID",
     );
     expect(md).not.toMatch(/Gempa.*M3\.9/);
   });
 
   it("falls through to the 'no risk' line when nothing is alarming", () => {
-    const md = buildFallback(makeSnapshot());
+    const md = buildFallback(makeSnapshot(), "id-ID");
     expect(md).toMatch(/Tidak ada risiko signifikan/);
   });
 
   it("always includes at least one recommendation", () => {
-    const md = buildFallback(makeSnapshot());
+    const md = buildFallback(makeSnapshot(), "id-ID");
     const recIdx = md.indexOf("## Rekomendasi");
     const recBody = md.slice(recIdx);
     expect(recBody.match(/^- /m)).not.toBeNull();
@@ -172,6 +178,7 @@ describe("buildFallback", () => {
       makeSnapshot({
         weather: null,
       }),
+      "id-ID",
     );
     expect(md).toContain("## Ringkasan Kondisi");
     expect(md).toContain("## Potensi Risiko");
@@ -179,7 +186,69 @@ describe("buildFallback", () => {
   });
 
   it("handles missing air quality data gracefully", () => {
-    const md = buildFallback(makeSnapshot({ airQuality: null }));
+    const md = buildFallback(makeSnapshot({ airQuality: null }), "id-ID");
     expect(md).toContain("## Ringkasan Kondisi");
+  });
+});
+
+describe("buildFallback — en-US", () => {
+  it("renders the three required English headings", () => {
+    const md = buildFallback(makeSnapshot(), "en-US");
+    expect(md).toContain("## Current Conditions");
+    expect(md).toContain("## Potential Risks");
+    expect(md).toContain("## Recommendations");
+  });
+
+  it("flags high temperature as a risk in English", () => {
+    const md = buildFallback(
+      makeSnapshot({
+        weather: {
+          location: makeSnapshot().weather!.location,
+          samples: [
+            {
+              ...makeSnapshot().weather!.samples[0],
+              t: 35,
+            },
+          ],
+        },
+      }),
+      "en-US",
+    );
+    expect(md).toMatch(/Temperature is high/i);
+    expect(md).toContain("35°C");
+  });
+
+  it("flags unhealthy PM2.5 and recommends a mask in English", () => {
+    const md = buildFallback(
+      makeSnapshot({
+        airQuality: { pm2_5: 60, pm10: 70, no2: 10, o3: 40, time: null },
+      }),
+      "en-US",
+    );
+    expect(md).toMatch(/Unhealthy/i);
+    expect(md).toMatch(/mask/i);
+  });
+
+  it("falls through to the English 'no risks' line when nothing is alarming", () => {
+    const md = buildFallback(makeSnapshot(), "en-US");
+    expect(md).toMatch(/No significant risks detected/);
+  });
+
+  it("flags rain via the English 'rain' regex variant", () => {
+    const md = buildFallback(
+      makeSnapshot({
+        weather: {
+          location: makeSnapshot().weather!.location,
+          samples: [
+            {
+              ...makeSnapshot().weather!.samples[0],
+              weather_desc: "Heavy Rain",
+            },
+          ],
+        },
+      }),
+      "en-US",
+    );
+    expect(md).toMatch(/heavy rain/i);
   });
 });
