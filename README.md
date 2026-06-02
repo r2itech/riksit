@@ -314,6 +314,7 @@ src/
       earthquake/route.ts   # GET — slim endpoint for 90 s polling
       region/route.ts       # GET — wilayah.id proxy (CORS workaround)
     globals.css             # theme + glassmorphism + Leaflet overrides
+    icon.svg                # browser-tab favicon (App Router file convention)
     layout.tsx
     page.tsx
   components/
