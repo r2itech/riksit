@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import DisclaimerModal from "./DisclaimerModal";
 import Header from "./Header";
 import Footer from "./Footer";
 import WeatherCard from "./WeatherCard";
@@ -394,6 +395,8 @@ export default function RiksitApp() {
       )}
 
       <Footer />
+
+      <DisclaimerModal />
     </div>
   );
 }
