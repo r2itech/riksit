@@ -29,7 +29,11 @@ export const groqProvider: AIProvider = {
         { role: "user", content: userPrompt },
       ],
       temperature: 0.4,
-      max_tokens: 800,
+      // Matches the Gemini ceiling so both providers have room for the full
+      // 3-section structured response. Llama/Gemma don't have hidden
+      // "thinking" tokens, but the older 800-token cap was already tight
+      // for longer EN responses.
+      max_tokens: 2048,
       top_p: 0.9,
     };
   },
