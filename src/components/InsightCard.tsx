@@ -13,6 +13,13 @@ interface Props {
   regionLabel: string;
 }
 
+// Exhaustive map — TS will surface a missing key if `InsightPayload["source"]` grows.
+const SOURCE_LABEL: Record<InsightPayload["source"], string> = {
+  gemini: "via Gemini",
+  groq: "via Groq",
+  fallback: "via fallback",
+};
+
 export default function InsightCard({ insight, loading, error, regionLabel }: Props) {
   const html = useMemo(() => (insight?.text ? renderMarkdown(insight.text) : ""), [insight?.text]);
 
@@ -48,7 +55,7 @@ export default function InsightCard({ insight, loading, error, regionLabel }: Pr
               {formatLocalTimestamp(insight.generatedAt)}
             </div>
             <div className="text-[10px] font-mono text-riksit-muted">
-              {insight.source === "gemini" ? "via Gemini" : "via fallback"}
+              {SOURCE_LABEL[insight.source]}
             </div>
           </div>
         ) : null}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFallback } from "@/lib/gemini";
+import { buildFallback } from "@/lib/ai/fallback";
 import type { EnvironmentalSnapshot, WeatherSample } from "@/lib/types";
 
 function makeSnapshot(over: Partial<EnvironmentalSnapshot> = {}): EnvironmentalSnapshot {
