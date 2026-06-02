@@ -90,6 +90,8 @@ interface Dict {
 
   "app.dataError": string;
   "app.dataErrorShort": string;
+
+  "github.viewSource": string;
 }
 
 export type DictKey = keyof Dict;
@@ -170,6 +172,8 @@ const DICTIONARY: Record<Locale, Dict> = {
 
     "app.dataError": "Gagal memuat data lingkungan",
     "app.dataErrorShort": "Gagal memuat data",
+
+    "github.viewSource": "Lihat kode sumber di GitHub",
   },
   "en-US": {
     "header.live": "Live data",
@@ -246,6 +250,8 @@ const DICTIONARY: Record<Locale, Dict> = {
 
     "app.dataError": "Failed to load environmental data",
     "app.dataErrorShort": "Failed to load data",
+
+    "github.viewSource": "View source on GitHub",
   },
 };
 

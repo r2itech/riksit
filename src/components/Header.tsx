@@ -1,8 +1,13 @@
 "use client";
 
-import { LeafCircuitIcon } from "@/lib/icons";
+import { GitHubIcon, LeafCircuitIcon } from "@/lib/icons";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { useT } from "./LocaleProvider";
+
+// Public source-of-truth URL. Derived once from `git remote get-url origin`
+// (https://github.com/r2itech/riksit.git) and pinned here — the project is
+// open-source so the canonical web URL is stable.
+const GITHUB_URL = "https://github.com/r2itech/riksit";
 
 interface Props {
   live: boolean;
@@ -34,6 +39,16 @@ export default function Header({ live, regionLabel }: Props) {
         </div>
         <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <LanguageSwitcher />
+          <a
+            href={GITHUB_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("github.viewSource")}
+            title={t("github.viewSource")}
+            className="grid place-items-center w-7 h-7 rounded-full bg-black/40 border border-riksit-border/60 text-riksit-muted hover:text-riksit-neon hover:border-riksit-neon/40 transition-colors"
+          >
+            <GitHubIcon size={14} />
+          </a>
           <div className="flex items-center gap-1.5">
             <span
               className="pulse-dot"
