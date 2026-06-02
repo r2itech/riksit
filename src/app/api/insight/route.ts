@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
-import { generateInsight } from "@/lib/gemini";
+import { generateInsight } from "@/lib/ai";
 import type { EnvironmentalSnapshot, InsightPayload } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 // Insight cache lives at the route level so we can apply two different TTLs:
-//   - Gemini-sourced insight: 10 min (matches the snapshot data cache window).
-//   - Deterministic fallback: 2 min (so Gemini gets retried sooner once the
-//     quota window recovers — we don't want to lock the user into a fallback
-//     for 10 min after a single 429).
-const GEMINI_TTL_MS = 10 * 60 * 1000;
+//   - AI-sourced insight (Gemini or Groq): 10 min (matches the snapshot data
+//     cache window).
+//   - Deterministic fallback: 2 min (so the AI providers get retried sooner
+//     once their quota windows recover — we don't want to lock the user into
+//     a fallback for 10 min after a single 429).
+const AI_TTL_MS = 10 * 60 * 1000;
 const FALLBACK_TTL_MS = 2 * 60 * 1000;
 
 interface CacheEntry {
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
   }
 
   const insight = await generateInsight(snapshot);
-  const ttl = insight.source === "gemini" ? GEMINI_TTL_MS : FALLBACK_TTL_MS;
+  const ttl = insight.source === "fallback" ? FALLBACK_TTL_MS : AI_TTL_MS;
   insightCache.set(key, { value: insight, expires: now + ttl });
 
   return NextResponse.json(insight, {

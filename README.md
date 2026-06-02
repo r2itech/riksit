@@ -15,16 +15,16 @@ selectors floating on top as overlays.
 
 ## Tech Stack
 
-| Category      | Choice                                                                           |
-| ------------- | -------------------------------------------------------------------------------- |
-| Framework     | **Next.js 14** (App Router) + **TypeScript**                                     |
-| Styling       | **Tailwind CSS** (custom dark + neon theme, glassmorphism)                       |
-| Map           | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles                        |
-| AI            | **Google Gemini API** via `generativelanguage.googleapis.com` (server-side only) |
-| Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                   |
-| UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library          |
-| Formatting    | **Prettier** + **ESLint** (`next/core-web-vitals` + `eslint-config-prettier`)    |
-| Testing       | **Vitest** (TS-native, no transformer config required)                           |
+| Category      | Choice                                                                                 |
+| ------------- | -------------------------------------------------------------------------------------- |
+| Framework     | **Next.js 14** (App Router) + **TypeScript**                                           |
+| Styling       | **Tailwind CSS** (custom dark + neon theme, glassmorphism)                             |
+| Map           | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles                              |
+| AI            | **Google Gemini API** primary, **Groq API** secondary fallback (both server-side only) |
+| Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                         |
+| UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library                |
+| Formatting    | **Prettier** + **ESLint** (`next/core-web-vitals` + `eslint-config-prettier`)          |
+| Testing       | **Vitest** (TS-native, no transformer config required)                                 |
 
 No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
@@ -58,9 +58,12 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
 - Re-generated automatically on every region change.
 - Consistent structure: `## Ringkasan Kondisi` → `## Potensi Risiko` → `## Rekomendasi`.
-- **Model fallback chain**: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`. Each model has a separate free-tier quota, so a 429 on one model is automatically retried on the next.
-- **Deterministic fallback**: if all three models are quota-exhausted, the API key is missing, or the network fails, RIKSIT generates a rule-based insight from the same data. A `via Gemini` / `via fallback` label is shown in the card corner.
-- **Per-region cache**: successful Gemini results are cached for 10 minutes (matching the snapshot data window); fallback results are cached for only 2 minutes so Gemini gets retried sooner once the quota window recovers.
+- **Provider chain**: Gemini first, Groq as a secondary AI fallback, deterministic rule-based generator as the last resort.
+  - **Gemini chain**: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`.
+  - **Groq chain**: `llama-3.3-70b-versatile` → `gemma2-9b-it`.
+  - Each model in each chain has its own free-tier quota, so a 429 on one model is automatically retried on the next, and a quota-exhausted Gemini chain falls through to Groq before the deterministic fallback runs.
+- **Deterministic fallback**: if both AI chains are quota-exhausted, both keys are missing, or every network call fails, RIKSIT generates a rule-based insight from the same data. A `via Gemini` / `via Groq` / `via fallback` label is shown in the card corner.
+- **Per-region cache**: successful AI results (Gemini or Groq) are cached for 10 minutes (matching the snapshot data window); fallback results are cached for only 2 minutes so the AI providers get retried sooner once a quota window recovers.
 
 ### Real-time earthquake feed
 
@@ -116,12 +119,17 @@ proxy validates the `parent` format per level to prevent SSRF.
 │                   ─► getLatestEarthquake() [60 s cache]      │
 │                   ─► getAirQuality()       [10 min cache]    │
 │                                                              │
-│   /api/insight    ─► route cache (10 m gemini / 2 m fallback)│
-│                   ─► generateInsight()                       │
-│                        ├─ gemini-2.5-flash                   │
-│                        ├─ gemini-2.5-flash-lite (on 429)     │
-│                        ├─ gemini-2.0-flash      (on 429)     │
-│                        └─ buildFallback()       (deterministic)│
+│   /api/insight    ─► route cache (10 m AI / 2 m fallback)    │
+│                   ─► generateInsight()  [lib/ai]             │
+│                        iterates PROVIDERS:                   │
+│                        ├─ geminiProvider                     │
+│                        │    ├─ gemini-2.5-flash              │
+│                        │    ├─ gemini-2.5-flash-lite (429)   │
+│                        │    └─ gemini-2.0-flash       (429)  │
+│                        ├─ groqProvider (if Gemini fails)     │
+│                        │    ├─ llama-3.3-70b-versatile       │
+│                        │    └─ gemma2-9b-it           (429)  │
+│                        └─ buildFallback()    (deterministic) │
 │                                                              │
 │   /api/earthquake ─► reuses snapshot's earthquake cache      │
 │                                                              │
@@ -132,8 +140,8 @@ proxy validates the `parent` format per level to prevent SSRF.
 Every cache is an in-memory `Map` (see `src/lib/cache.ts`). Simple, zero deps,
 scoped to a single Node.js process (per serverless instance when deployed to
 Vercel). The insight cache is **shared across all users hitting the same
-server** — the Gemini quota lives on the API key, so 100 users on one
-deployment share one quota pool.
+server** — both the Gemini and Groq quotas live on their API keys, so 100
+users on one deployment share each provider's quota pool.
 
 ---
 
@@ -182,12 +190,15 @@ Leaflet instance is mounted at a time (Leaflet dislikes hidden containers).
 
 ## Environment Variables
 
-| Variable         | Required   | Description                                                                                                                                                                     |
-| ---------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GEMINI_API_KEY` | optional\* | Google Generative AI key. Used **server-side only**, never exposed to the browser. If absent or quota-exhausted, the app automatically uses its deterministic fallback insight. |
+| Variable         | Required   | Description                                                                                                                                                                                                                               |
+| ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` | optional\* | Google Generative AI key. Used **server-side only**, never exposed to the browser. Absent ⇒ the Gemini chain is skipped and Groq is attempted first.                                                                                      |
+| `GROQ_API_KEY`   | optional\* | Groq API key. Used **server-side only**, never exposed to the browser. Acts as the secondary AI fallback when the Gemini chain is exhausted. Absent ⇒ skipped and the deterministic generator takes over once Gemini is also unavailable. |
 
-\* Technically optional. The app still runs without a key — the InsightCard
-just shows `via fallback` and uses the deterministic generator.
+\* Technically optional. The app still runs without either key — the
+InsightCard just shows `via fallback` and uses the deterministic generator.
+With only `GEMINI_API_KEY` set the app behaves as before. With only
+`GROQ_API_KEY` set, Groq becomes the primary AI source.
 
 ### Getting a GEMINI_API_KEY
 
@@ -199,6 +210,16 @@ just shows `via fallback` and uses the deterministic generator.
 GEMINI_API_KEY=YOUR_KEY_HERE
 ```
 
+### Getting a GROQ_API_KEY
+
+1. Visit https://console.groq.com/keys
+2. **Create API Key** → copy the value.
+3. Paste it into `.env.local`:
+
+```env
+GROQ_API_KEY=YOUR_KEY_HERE
+```
+
 ---
 
 ## Local Setup
@@ -207,7 +228,8 @@ GEMINI_API_KEY=YOUR_KEY_HERE
 # 1. Install deps
 npm install
 
-# 2. Copy the example env file and fill in GEMINI_API_KEY (or leave it blank)
+# 2. Copy the example env file and fill in GEMINI_API_KEY and/or GROQ_API_KEY
+#    (both optional — leave blank to use the deterministic fallback)
 cp .env.local.example .env.local
 
 # 3. Start the dev server
@@ -259,14 +281,15 @@ npm run test:watch    # re-run on file change
 
 What's covered today (6 files, ~65 tests, runs in ~1.5 s):
 
-| File                 | Module under test                     | Highlights                                                                                                                                                  |
-| -------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `markdown.test.ts`   | `src/lib/markdown.ts`                 | HTML escaping (XSS safety), headings, bold/italic/code, lists, paragraph grouping, end-to-end Gemini insight render                                         |
-| `cache.test.ts`      | `src/lib/cache.ts`                    | TTL hit/miss, expiry on advance, null/undefined skipped, per-key isolation, `invalidate()` (global + prefix)                                                |
-| `open-meteo.test.ts` | `src/lib/open-meteo.ts`               | `pm25Band` boundary thresholds (12 / 35.4 / 55.4 / 150.4) + null / NaN / Infinity                                                                           |
-| `bmkg.test.ts`       | `src/lib/bmkg.ts`                     | `buildForecast` grouping, min/max, midday picker, `days` limit; `getEarlyWarnings` only matches severe codes for _today_                                    |
-| `region-api.test.ts` | `src/lib/region-api.ts`               | `normalizeName` strips every admin prefix (Kabupaten / Kota Adm. / DKI / Daerah Istimewa); `findRegencyByName` exact + partial + Jakarta-form interop       |
-| `gemini.test.ts`     | `src/lib/gemini.ts` (`buildFallback`) | Heading structure, conditional risks (high temp / humidity / severe weather / unhealthy PM2.5 / M ≥ 5 quakes), no-risk fallthrough, missing-data robustness |
+| File                 | Module under test                             | Highlights                                                                                                                                                                                           |
+| -------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `markdown.test.ts`   | `src/lib/markdown.ts`                         | HTML escaping (XSS safety), headings, bold/italic/code, lists, paragraph grouping, end-to-end Gemini insight render                                                                                  |
+| `cache.test.ts`      | `src/lib/cache.ts`                            | TTL hit/miss, expiry on advance, null/undefined skipped, per-key isolation, `invalidate()` (global + prefix)                                                                                         |
+| `open-meteo.test.ts` | `src/lib/open-meteo.ts`                       | `pm25Band` boundary thresholds (12 / 35.4 / 55.4 / 150.4) + null / NaN / Infinity                                                                                                                    |
+| `bmkg.test.ts`       | `src/lib/bmkg.ts`                             | `buildForecast` grouping, min/max, midday picker, `days` limit; `getEarlyWarnings` only matches severe codes for _today_                                                                             |
+| `region-api.test.ts` | `src/lib/region-api.ts`                       | `normalizeName` strips every admin prefix (Kabupaten / Kota Adm. / DKI / Daerah Istimewa); `findRegencyByName` exact + partial + Jakarta-form interop                                                |
+| `fallback.test.ts`   | `src/lib/ai/fallback.ts` (`buildFallback`)    | Heading structure, conditional risks (high temp / humidity / severe weather / unhealthy PM2.5 / M ≥ 5 quakes), no-risk fallthrough, missing-data robustness                                          |
+| `chain.test.ts`      | `src/lib/ai/chain.ts` + `src/lib/ai/index.ts` | `runProviderChain` no-key short-circuit parametrized across every provider (absent / empty / whitespace / quotes-only); `generateInsight` returns the deterministic fallback when no AI keys are set |
 
 **Not yet covered (deliberately):** React components and Next.js API routes —
 those want integration tests (React Testing Library + jsdom, or a Next.js
@@ -281,7 +304,7 @@ src/
   app/
     api/
       snapshot/route.ts     # GET — aggregates BMKG + Open-Meteo + autogempa
-      insight/route.ts      # POST — Gemini chain + route cache
+      insight/route.ts      # POST — Gemini → Groq → fallback orchestration + route cache
       earthquake/route.ts   # GET — slim endpoint for 90 s polling
       region/route.ts       # GET — wilayah.id proxy (CORS workaround)
     globals.css             # theme + glassmorphism + Leaflet overrides
@@ -313,7 +336,13 @@ src/
     nominatim.ts            # client reverse-geocode wrapper
     bmkg.ts                 # server-side BMKG client (weather + earthquake)
     open-meteo.ts           # server-side Open-Meteo client + PM2.5 band
-    gemini.ts               # server-side Gemini client + model chain + fallback
+    ai/                     # server-side AI insight registry + chain runner
+      index.ts              #   generateInsight() — orchestrator + PROVIDERS list
+      chain.ts              #   AIProvider interface + runProviderChain (shared loop)
+      prompt.ts             #   SYSTEM_PROMPT + summarizeSnapshot (shared)
+      fallback.ts           #   deterministic rule-based buildFallback
+      gemini.ts             #   geminiProvider config
+      groq.ts               #   groqProvider config
     markdown.ts             # escaping markdown → HTML renderer
     icons.tsx               # SVG icon set
     __tests__/
@@ -322,7 +351,8 @@ src/
       open-meteo.test.ts    # Vitest — pm25Band thresholds
       bmkg.test.ts          # Vitest — forecast grouping + early-warning detection
       region-api.test.ts    # Vitest — normalizeName + findRegencyByName
-      gemini.test.ts        # Vitest — buildFallback structure + risk detection
+      fallback.test.ts      # Vitest — buildFallback structure + risk detection
+      chain.test.ts         # Vitest — runProviderChain no-key short-circuit (parametrized) + generateInsight fallback
 
 # Root-level config
 .prettierrc                 # Prettier formatting rules
