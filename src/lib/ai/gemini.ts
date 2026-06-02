@@ -29,7 +29,21 @@ export const geminiProvider: AIProvider = {
         ],
       },
     ],
-    generationConfig: { temperature: 0.4, maxOutputTokens: 800, topP: 0.9 },
+    generationConfig: {
+      temperature: 0.4,
+      // 2048 is the response-side budget. Gemini 2.5 models also consume
+      // tokens from this budget while "thinking" before answering, which
+      // historically truncated the visible response mid-sentence. We
+      // explicitly disable thinking via thinkingBudget=0 below; the larger
+      // ceiling is a margin in case future models reintroduce hidden tokens.
+      maxOutputTokens: 2048,
+      topP: 0.9,
+      // Disable Gemini 2.5's internal chain-of-thought. The task is
+      // structured summarization, not multi-step reasoning, and thinking
+      // tokens count against maxOutputTokens. Ignored by models that don't
+      // support it (e.g. gemini-2.0-flash).
+      thinkingConfig: { thinkingBudget: 0 },
+    },
   }),
   parseText: (data) => {
     const r = data as GeminiResponse;
