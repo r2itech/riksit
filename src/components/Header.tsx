@@ -1,6 +1,8 @@
 "use client";
 
 import { LeafCircuitIcon } from "@/lib/icons";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useT } from "./LocaleProvider";
 
 interface Props {
   live: boolean;
@@ -8,6 +10,7 @@ interface Props {
 }
 
 export default function Header({ live, regionLabel }: Props) {
+  const t = useT();
   return (
     <header className="shrink-0 z-30 backdrop-blur-md bg-riksit-bg/70 border-b border-riksit-border/50">
       <div className="mx-auto w-full px-3 sm:px-4 py-2 flex items-center justify-between gap-3">
@@ -19,7 +22,7 @@ export default function Header({ live, regionLabel }: Props) {
             <div className="flex items-center gap-2">
               <h1 className="font-semibold tracking-[0.25em] text-riksit-ink text-base">RIKSIT</h1>
               <span className="hidden sm:inline text-[10px] font-mono text-riksit-muted uppercase">
-                Environmental AI
+                {t("header.subtitle")}
               </span>
             </div>
             {regionLabel ? (
@@ -29,15 +32,18 @@ export default function Header({ live, regionLabel }: Props) {
             ) : null}
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <span
-            className="pulse-dot"
-            style={live ? undefined : { animation: "none", opacity: 0.5 }}
-            aria-hidden="true"
-          />
-          <span className="text-[10px] font-mono text-riksit-muted">
-            {live ? "Live data stream" : "Standby"}
-          </span>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <LanguageSwitcher />
+          <div className="flex items-center gap-1.5">
+            <span
+              className="pulse-dot"
+              style={live ? undefined : { animation: "none", opacity: 0.5 }}
+              aria-hidden="true"
+            />
+            <span className="text-[10px] font-mono text-riksit-muted">
+              {live ? t("header.live") : t("header.standby")}
+            </span>
+          </div>
         </div>
       </div>
     </header>

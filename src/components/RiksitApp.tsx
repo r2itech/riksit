@@ -16,6 +16,7 @@ import { fetchEarthquake, fetchInsight, fetchSnapshot } from "@/lib/client-api";
 import { resolveByCoordinates } from "@/lib/region-resolver";
 import type { EnvironmentalSnapshot, InsightPayload } from "@/lib/types";
 import type { RegionIds, RegionResolved } from "./RegionSelector";
+import { useLocale } from "./LocaleProvider";
 
 function readInitialRegion(): Partial<RegionIds> | undefined {
   if (typeof window === "undefined") return undefined;
@@ -31,6 +32,7 @@ function readInitialRegion(): Partial<RegionIds> | undefined {
 }
 
 export default function RiksitApp() {
+  const { locale, t } = useLocale();
   // Defer mount until window is available so the child reads URL params on
   // first render, avoiding a race with the cascading dropdowns.
   const [mounted, setMounted] = useState(false);
@@ -102,7 +104,7 @@ export default function RiksitApp() {
         const insCtrl = new AbortController();
         insightAbortRef.current = insCtrl;
         setInsightLoading(true);
-        fetchInsight(snap, insCtrl.signal)
+        fetchInsight(snap, locale, insCtrl.signal)
           .then((ins) => {
             if (insCtrl.signal.aborted) return;
             setInsight(ins);
@@ -126,7 +128,38 @@ export default function RiksitApp() {
       snapCtrl.abort();
       insightAbortRef.current?.abort();
     };
+    // Locale is intentionally not in deps — the dedicated locale-change effect
+    // below re-fetches the insight without re-fetching the snapshot.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region]);
+
+  // Re-fetch only the insight when locale changes (snapshot is locale-agnostic).
+  // Skips the very first render where snapshot is null.
+  useEffect(() => {
+    if (!snapshot) return;
+    const insCtrl = new AbortController();
+    insightAbortRef.current?.abort();
+    insightAbortRef.current = insCtrl;
+    setInsight(null);
+    setInsightError(null);
+    setInsightLoading(true);
+    fetchInsight(snapshot, locale, insCtrl.signal)
+      .then((ins) => {
+        if (insCtrl.signal.aborted) return;
+        setInsight(ins);
+        setInsightLoading(false);
+      })
+      .catch((err: unknown) => {
+        if (insCtrl.signal.aborted) return;
+        console.warn("[insight] failed", err);
+        setInsightError(err instanceof Error ? err.message : "Unknown error");
+        setInsightLoading(false);
+      });
+    return () => insCtrl.abort();
+    // snapshot is intentionally omitted — the region effect handles the
+    // snapshot-changed case. This effect only fires on locale flips.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [locale]);
 
   // Earthquake auto-refresh: poll /api/earthquake every 90 s while the tab is
   // visible. setInterval is used (not chained setTimeouts) so a single skipped
@@ -233,9 +266,9 @@ export default function RiksitApp() {
   }, []);
 
   const regionLabel = useMemo(() => {
-    if (!region) return "Memuat lokasi...";
+    if (!region) return t("insight.regionPlaceholder");
     return `${region.villageName}, ${region.districtName}, ${region.regencyName}, ${region.provinceName}`;
-  }, [region]);
+  }, [region, t]);
 
   const live = snapshot !== null && !snapshotLoading;
 
@@ -273,7 +306,7 @@ export default function RiksitApp() {
               role="alert"
               className="absolute top-3 left-1/2 -translate-x-1/2 z-[1300] glass border-riksit-danger/40 p-2 text-xs text-riksit-danger max-w-md"
             >
-              Gagal memuat data: {snapshotError}
+              {t("app.dataErrorShort")}: {snapshotError}
             </div>
           ) : null}
 
@@ -357,7 +390,7 @@ export default function RiksitApp() {
               role="alert"
               className="glass border-riksit-danger/40 p-3 text-sm text-riksit-danger"
             >
-              Gagal memuat data lingkungan: {snapshotError}
+              {t("app.dataError")}: {snapshotError}
             </div>
           ) : null}
 

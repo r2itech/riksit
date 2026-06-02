@@ -13,6 +13,7 @@ import { reverseGeocode } from "@/lib/nominatim";
 import type { District, Province, Regency, Village } from "@/lib/types";
 import { CompassIcon } from "@/lib/icons";
 import SearchableSelect from "./SearchableSelect";
+import { useT } from "./LocaleProvider";
 
 // The four region codes are Kemendagri dot-separated strings, matching BMKG.
 // We keep the *Id field names for backward compatibility with the URL params
@@ -45,6 +46,7 @@ interface Props {
 type LocateState = "idle" | "locating" | "done" | "error";
 
 export default function RegionSelector({ initial, selected: external, onChange }: Props) {
+  const t = useT();
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [regencies, setRegencies] = useState<Regency[]>([]);
   const [districts, setDistricts] = useState<District[]>([]);
@@ -187,7 +189,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
     const fallback = () => {
       if (!active) return;
       setLocateState("done");
-      setLocateMessage("Menggunakan wilayah default: Majalengka.");
+      setLocateMessage(t("region.defaultFallback"));
       setProvinceCode(DEFAULT_REGION.provinceCode);
       setRegencyCode(DEFAULT_REGION.regencyCode);
       setDistrictCode(DEFAULT_REGION.districtCode);
@@ -200,7 +202,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
     }
 
     setLocateState("locating");
-    setLocateMessage("Mendeteksi lokasi...");
+    setLocateMessage(t("region.locating"));
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
@@ -243,7 +245,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
             setDistrictCode(firstDist.code);
             setVillageCode(firstVill.code);
             setLocateState("done");
-            setLocateMessage(`Lokasi terdeteksi: ${prov.name}.`);
+            setLocateMessage(t("region.detectedProvince", { province: prov.name }));
             return;
           }
           const distList = await getDistricts(reg.code);
@@ -261,7 +263,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
           setDistrictCode(firstDist.code);
           setVillageCode(firstVill.code);
           setLocateState("done");
-          setLocateMessage(`Lokasi terdeteksi: ${reg.name}, ${prov.name}.`);
+          setLocateMessage(t("region.detected", { regency: reg.name, province: prov.name }));
         } catch (err) {
           if (!active) return;
           console.warn("[region] reverse geocode failed", err);
@@ -304,35 +306,35 @@ export default function RegionSelector({ initial, selected: external, onChange }
         <SearchableSelect
           value={provinceCode}
           options={provinces}
-          placeholder="— Provinsi —"
-          ariaLabel="Pilih provinsi"
-          title="Provinsi"
+          placeholder={t("region.placeholder.province")}
+          ariaLabel={t("region.aria.province")}
+          title={t("region.title.province")}
           onChange={handleProvince}
         />
         <SearchableSelect
           value={regencyCode}
           options={regencies}
-          placeholder="— Kab/Kota —"
-          ariaLabel="Pilih kabupaten atau kota"
-          title="Kab/Kota"
+          placeholder={t("region.placeholder.regency")}
+          ariaLabel={t("region.aria.regency")}
+          title={t("region.title.regency")}
           onChange={handleRegency}
           disabled={!provinceCode || regencies.length === 0}
         />
         <SearchableSelect
           value={districtCode}
           options={districts}
-          placeholder="— Kecamatan —"
-          ariaLabel="Pilih kecamatan"
-          title="Kecamatan"
+          placeholder={t("region.placeholder.district")}
+          ariaLabel={t("region.aria.district")}
+          title={t("region.title.district")}
           onChange={handleDistrict}
           disabled={!regencyCode || districts.length === 0}
         />
         <SearchableSelect
           value={villageCode}
           options={villages}
-          placeholder="— Desa/Kel —"
-          ariaLabel="Pilih desa atau kelurahan"
-          title="Desa/Kel"
+          placeholder={t("region.placeholder.village")}
+          ariaLabel={t("region.aria.village")}
+          title={t("region.title.village")}
           onChange={setVillageCode}
           disabled={!districtCode || villages.length === 0}
         />
@@ -340,9 +342,7 @@ export default function RegionSelector({ initial, selected: external, onChange }
       <div className="flex items-center gap-2 text-[10px] font-mono text-riksit-muted">
         <CompassIcon size={12} className="text-riksit-neon" />
         <span aria-live="polite" className="truncate">
-          {locateState === "locating"
-            ? "Mendeteksi lokasi..."
-            : locateMessage || "Pilih wilayah dari dropdown atau klik peta"}
+          {locateState === "locating" ? t("region.locating") : locateMessage || t("region.hint")}
         </span>
       </div>
     </div>

@@ -1,13 +1,17 @@
+"use client";
+
 import { LeafCircuitIcon } from "@/lib/icons";
+import { useT } from "./LocaleProvider";
 
 export default function Footer() {
+  const t = useT();
   return (
     <footer className="shrink-0 border-t border-riksit-border/40">
       <div className="mx-auto w-full px-3 sm:px-4 py-2 flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between text-[10px] text-riksit-muted">
         <div className="flex items-center gap-2">
           <LeafCircuitIcon size={12} className="text-riksit-neon" />
           <span className="font-mono tracking-wider uppercase text-riksit-ink/80">
-            Observe. Understand. Act.
+            {t("footer.tagline")}
           </span>
         </div>
         <div className="font-mono">

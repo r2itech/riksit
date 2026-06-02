@@ -71,6 +71,14 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 - Server-side cache of 60 seconds on `autogempa.json` → at most one upstream request per 90 seconds per server instance.
 - A "Last check" timestamp is shown on the earthquake card.
 
+### Localization (i18n)
+
+- **Two locales**: Bahasa Indonesia (`id-ID`, default) and English (`en-US`).
+- **Compact language switcher** in the header — two-button toggle, active locale highlighted in neon. Click switches instantly; choice is persisted via `localStorage["riksit:locale"]` and the `html lang` attribute is synced.
+- **AI insight is locale-aware**: both Gemini and Groq receive a localized system prompt + context summary, so the AI generates its insight in the user's selected language. The deterministic rule-based fallback (`buildFallback`) has two language variants too — the card never mixes languages.
+- **Cache keyed by locale**: `insight:{locale}:{lat}:{lon}` so the EN and ID variants don't collide; switching the language re-fetches the insight on the next request.
+- **No i18n library**: a flat typed dictionary in `src/lib/i18n.ts` + a tiny React Context (`LocaleProvider`) + a typed `useT()` hook. Type-safe keys (TS errors on typos), `{placeholder}` interpolation, ~2 kB to the page bundle.
+
 ### AI accuracy disclaimer
 
 - On every launch and refresh, a modal reminds users that the AI-generated insight is **not always 100% accurate** and does not replace official information from BMKG, BPBD, or local authorities.
@@ -285,7 +293,7 @@ npm test              # single run (CI-friendly)
 npm run test:watch    # re-run on file change
 ```
 
-What's covered today (6 files, ~65 tests, runs in ~1.5 s):
+What's covered today (8 files, ~89 tests, runs in ~1 s):
 
 | File                 | Module under test                             | Highlights                                                                                                                                                                                           |
 | -------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -326,6 +334,8 @@ src/
     MapPanel.tsx            # wrapper around RegionMap (bare / withSelector variant)
     RegionMap.tsx           # Leaflet map + click handler
     DisclaimerModal.tsx     # AI accuracy disclaimer (shown every launch, no persistence)
+    LocaleProvider.tsx      # Context provider — current locale, setLocale, useT hook, html lang sync
+    LanguageSwitcher.tsx    # two-button ID/EN toggle in the header
     InsightCard.tsx         # markdown render + skeleton
     WeatherCard.tsx         # current weather
     ForecastCard.tsx        # 3-day forecast
@@ -343,7 +353,8 @@ src/
     region-resolver.ts      # coordinates → region (Nominatim + wilayah walk)
     nominatim.ts            # client reverse-geocode wrapper
     bmkg.ts                 # server-side BMKG client (weather + earthquake)
-    open-meteo.ts           # server-side Open-Meteo client + PM2.5 band
+    open-meteo.ts           # server-side Open-Meteo client + pm25Band + pm25BandLabel
+    i18n.ts                 # locale catalog, typed dictionary, translate() — usable both client and server
     ai/                     # server-side AI insight registry + chain runner
       index.ts              #   generateInsight() — orchestrator + PROVIDERS list
       chain.ts              #   AIProvider interface + runProviderChain (shared loop)
@@ -359,8 +370,9 @@ src/
       open-meteo.test.ts    # Vitest — pm25Band thresholds
       bmkg.test.ts          # Vitest — forecast grouping + early-warning detection
       region-api.test.ts    # Vitest — normalizeName + findRegencyByName
-      fallback.test.ts      # Vitest — buildFallback structure + risk detection
-      chain.test.ts         # Vitest — runProviderChain no-key short-circuit (parametrized) + generateInsight fallback
+      fallback.test.ts      # Vitest — buildFallback structure + risk detection (ID + EN)
+      chain.test.ts         # Vitest — runProviderChain no-key short-circuit (parametrized) + generateInsight fallback (ID + EN)
+      i18n.test.ts          # Vitest — locale catalog, isLocale narrowing, translate + interpolation
 
 # Root-level config
 .prettierrc                 # Prettier formatting rules

@@ -8,6 +8,7 @@
 // loop or error-handling code needs to be copied. See `lib/ai/index.ts` for
 // the registry.
 import type { EnvironmentalSnapshot, InsightPayload } from "../types";
+import type { Locale } from "../i18n";
 
 // Source values produced by an AI call (i.e. every InsightPayload source
 // except the deterministic "fallback").
@@ -24,8 +25,8 @@ export interface AIProvider {
   endpoint: (model: string) => string;
   /** Headers added on top of `Content-Type: application/json`. */
   authHeader: (key: string) => Record<string, string>;
-  /** Request JSON body for this model + snapshot. */
-  buildBody: (model: string, snapshot: EnvironmentalSnapshot) => unknown;
+  /** Request JSON body for this model + snapshot + locale. */
+  buildBody: (model: string, snapshot: EnvironmentalSnapshot, locale: Locale) => unknown;
   /** Pluck the generated text out of the parsed JSON response. */
   parseText: (data: unknown) => string | undefined;
 }
@@ -44,6 +45,7 @@ async function callModel(
   model: string,
   key: string,
   snapshot: EnvironmentalSnapshot,
+  locale: Locale,
 ): Promise<CallResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(new Error("timeout")), REQUEST_TIMEOUT_MS);
@@ -54,7 +56,7 @@ async function callModel(
         "Content-Type": "application/json",
         ...provider.authHeader(key),
       },
-      body: JSON.stringify(provider.buildBody(model, snapshot)),
+      body: JSON.stringify(provider.buildBody(model, snapshot, locale)),
       signal: ctrl.signal,
     });
     if (!res.ok) {
@@ -85,13 +87,14 @@ async function callModel(
 export async function runProviderChain(
   provider: AIProvider,
   snapshot: EnvironmentalSnapshot,
+  locale: Locale,
 ): Promise<InsightPayload | null> {
   const key = sanitizeKey(process.env[provider.envVar]);
   if (!key) return null;
 
   const generatedAt = new Date().toISOString();
   for (const model of provider.modelChain) {
-    const result = await callModel(provider, model, key, snapshot);
+    const result = await callModel(provider, model, key, snapshot, locale);
     if (result.ok) {
       console.log(`[${provider.source}] generated via ${model}`);
       return { generatedAt, text: result.text, source: provider.source };
