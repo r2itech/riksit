@@ -21,14 +21,15 @@ export const geminiProvider: AIProvider = {
   endpoint: (model) =>
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
   authHeader: (key) => ({ "x-goog-api-key": key }),
-  buildBody: (_model, snapshot, locale) => ({
+  buildBody: (_model, snapshot, locale, extraContext) => ({
     contents: [
       {
         role: "user",
         parts: [
           {
             text:
-              `${getSystemPrompt(locale)}\n\n${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}\n\n` +
+              `${getSystemPrompt(locale)}\n\n${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}` +
+              `${extraContext ?? ""}\n\n` +
               getUserCallToAction(locale),
           },
         ],

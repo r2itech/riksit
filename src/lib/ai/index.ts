@@ -15,6 +15,7 @@ import { runProviderChain } from "./chain";
 import { buildFallback } from "./fallback";
 import { geminiProvider } from "./gemini";
 import { groqProvider } from "./groq";
+import { buildReportsContextBlock, fetchReportsForRegion } from "../reports-context";
 
 const PROVIDERS = [geminiProvider, groqProvider] as const;
 
@@ -22,8 +23,13 @@ export async function generateInsight(
   snapshot: EnvironmentalSnapshot,
   locale: Locale,
 ): Promise<InsightPayload> {
+  // Fetch reports in parallel with provider env-var resolution. A failure
+  // here resolves to []; the providers will simply not see the section.
+  const reportRows = await fetchReportsForRegion(snapshot);
+  const extraContext = buildReportsContextBlock(reportRows, locale);
+
   for (const provider of PROVIDERS) {
-    const result = await runProviderChain(provider, snapshot, locale);
+    const result = await runProviderChain(provider, snapshot, locale, extraContext);
     if (result) return result;
   }
   return {

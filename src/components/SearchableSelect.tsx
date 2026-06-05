@@ -48,6 +48,13 @@ export default function SearchableSelect({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
+  // When the input is near the bottom of the viewport (e.g. the region
+  // selector pinned at the page footer), opening the listbox downward
+  // pushed the page taller and caused a scroll-jump. Track here whether
+  // we should open upward instead. Decided at open-time from the input
+  // rect — simple and stable, no resize listener needed for the typical
+  // case where the user doesn't resize mid-selection.
+  const [dropUp, setDropUp] = useState(false);
 
   const selected = useMemo(() => options.find((o) => o.code === value) ?? null, [options, value]);
 
@@ -67,6 +74,21 @@ export default function SearchableSelect({
     const idx = filtered.findIndex((o) => o.code === value);
     setHighlight(idx >= 0 ? idx : 0);
   }, [open, query, filtered, value]);
+
+  // Decide drop direction whenever the listbox is about to open. Compare
+  // the available space below the input against the listbox's actual
+  // max height (224 px from `max-h-56`); flip upward only when there's
+  // genuinely not enough room AND more space exists above.
+  useEffect(() => {
+    if (!open) return;
+    const input = inputRef.current;
+    if (!input || typeof window === "undefined") return;
+    const rect = input.getBoundingClientRect();
+    const LIST_MAX = 224 + 8; // max-h-56 + small margin
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setDropUp(spaceBelow < LIST_MAX && spaceAbove > spaceBelow);
+  }, [open]);
 
   // Click outside → close + discard pending query.
   useEffect(() => {
@@ -157,13 +179,14 @@ export default function SearchableSelect({
           ref={listRef}
           id={listId}
           role="listbox"
-          className="
-            absolute z-50 mt-1 w-full max-h-56 overflow-y-auto riksit-thin-scroll
+          className={`
+            absolute z-50 w-full max-h-56 overflow-y-auto riksit-thin-scroll
             rounded-md border border-riksit-neon/30
             bg-riksit-bg/95 backdrop-blur
             shadow-glow text-[11px] font-mono
             py-0.5
-          "
+            ${dropUp ? "bottom-full mb-1" : "top-full mt-1"}
+          `}
         >
           {filtered.length === 0 ? (
             <li className="px-2 py-1.5 text-[10px] text-riksit-muted">{t("select.noResults")}</li>

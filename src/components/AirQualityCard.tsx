@@ -42,17 +42,19 @@ export default function AirQualityCard({ airQuality, loading }: Props) {
   const tone = toneClass[band.tone];
   return (
     <CardShell title={t("airQuality.title")} icon={<WaveIcon size={14} />} hint="Open-Meteo">
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2.5">
         <div>
-          <div className="text-[9px] uppercase tracking-wider text-riksit-muted">PM2.5</div>
+          <div className="text-[10px] uppercase tracking-wider text-riksit-muted">PM2.5</div>
           <div className="flex items-baseline gap-1">
-            <span className="font-mono text-2xl font-semibold text-riksit-ink leading-none">
+            <span className="font-mono text-3xl font-semibold text-riksit-ink leading-none">
               {fmt(airQuality.pm2_5)}
             </span>
-            <span className="font-mono text-[10px] text-riksit-muted">µg/m³</span>
+            <span className="font-mono text-[11px] text-riksit-muted">µg/m³</span>
           </div>
         </div>
-        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ring-1 ${tone}`}>
+        <span
+          className={`px-2 py-0.5 rounded-full text-[11px] font-medium ring-1 whitespace-nowrap ${tone}`}
+        >
           {pm25BandLabel(band.tone, locale)}
         </span>
       </div>
@@ -67,9 +69,9 @@ export default function AirQualityCard({ airQuality, loading }: Props) {
 
 function Pollutant({ label, value }: { label: string; value: number | null }) {
   return (
-    <div className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-1 text-center">
-      <div className="text-[9px] uppercase tracking-wider text-riksit-muted">{label}</div>
-      <div className="font-mono text-[11px] text-riksit-ink leading-tight">{fmt(value)}</div>
+    <div className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-1.5 text-center">
+      <div className="text-[10px] uppercase tracking-wider text-riksit-muted">{label}</div>
+      <div className="font-mono text-[13px] text-riksit-ink mt-0.5 leading-tight">{fmt(value)}</div>
     </div>
   );
 }

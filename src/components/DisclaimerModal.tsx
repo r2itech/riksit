@@ -55,6 +55,7 @@ export default function DisclaimerModal() {
 
         <div className="text-sm text-riksit-ink space-y-3 mb-5 leading-relaxed">
           <p>{renderInlineBold(t("disclaimer.intro"))}</p>
+          <p>{renderInlineBold(t("disclaimer.community"))}</p>
           <p>{renderInlineBold(t("disclaimer.warning"))}</p>
           <p className="text-riksit-muted">{renderInlineBold(t("disclaimer.emergency"))}</p>
         </div>

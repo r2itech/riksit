@@ -167,6 +167,62 @@ body {
   }
 }
 
+/* Spotted Info "spotlight" treatment. The regular data cards use the muted
+   `glass + neon-border` look; the SpottedInfoCard intentionally breaks
+   from that because it surfaces time-bounded community/operator notices
+   that should jump out. Three layered effects:
+     1. Saturated amber→cyan gradient body (vs. the green-tinted glass).
+     2. Brighter conic/linear border with a slow opacity pulse — a louder
+        version of `.neon-border`.
+     3. Wider amber-tinted ambient shadow for a halo glow.
+   The pulse is opacity-only so it stays GPU-composited; the
+   `prefers-reduced-motion` block at the bottom of this file already
+   neutralizes it via the catch-all animation-duration override. */
+.spotlight {
+  position: relative;
+  isolation: isolate;
+  border-radius: 0.875rem;
+  background:
+    linear-gradient(135deg, rgba(255, 181, 71, 0.2), rgba(0, 229, 255, 0.1) 55%, transparent),
+    linear-gradient(180deg, rgba(20, 32, 28, 0.88), rgba(12, 22, 18, 0.6));
+  border: 1px solid rgba(255, 181, 71, 0.45);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 181, 71, 0.18),
+    0 0 26px rgba(255, 181, 71, 0.28),
+    0 8px 36px rgba(0, 0, 0, 0.45);
+}
+.spotlight::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    140deg,
+    rgba(255, 181, 71, 0.9),
+    rgba(0, 229, 255, 0.55) 50%,
+    rgba(255, 181, 71, 0.9)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  animation: spotlightGlow 3.2s ease-in-out infinite;
+}
+@keyframes spotlightGlow {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 /* Skeleton */
 .skeleton {
   background: linear-gradient(

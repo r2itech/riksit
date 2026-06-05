@@ -80,6 +80,7 @@ interface Dict {
 
   "disclaimer.title": string;
   "disclaimer.intro": string;
+  "disclaimer.community": string;
   "disclaimer.warning": string;
   "disclaimer.emergency": string;
   "disclaimer.ack": string;
@@ -92,6 +93,39 @@ interface Dict {
   "app.dataErrorShort": string;
 
   "github.viewSource": string;
+
+  "spotted.title": string;
+  "spotted.severity.info": string;
+  "spotted.severity.warning": string;
+  "spotted.severity.danger": string;
+  "spotted.expiresIn": string;
+  "spotted.expiresInHours": string;
+  "spotted.expiresInDays": string;
+  "spotted.expired": string;
+
+  "feed.title": string;
+  "feed.empty": string;
+  "feed.aiSource": string;
+  "feed.timeAgo.justNow": string;
+  "feed.timeAgo.minutes": string;
+  "feed.timeAgo.hours": string;
+  "feed.timeAgo.days": string;
+  "feed.report": string;
+  "feed.inputPlaceholder": string;
+
+  "report.title": string;
+  "report.fieldUsername": string;
+  "report.fieldMessage": string;
+  "report.fieldLocation": string;
+  "report.submit": string;
+  "report.submitting": string;
+  "report.cancel": string;
+  "report.successToast": string;
+  "report.errorPrefix": string;
+  "report.charCount": string;
+  "report.validationRequired": string;
+  "report.validationMaxChars": string;
+  "report.close": string;
 }
 
 export type DictKey = keyof Dict;
@@ -159,9 +193,11 @@ const DICTIONARY: Record<Locale, Dict> = {
 
     "disclaimer.title": "Selamat Datang di RIKSIT",
     "disclaimer.intro":
-      "RIKSIT menggunakan **AI generatif** untuk merangkum data lingkungan dari **BMKG**, **Open-Meteo**, dan sumber publik lainnya menjadi wawasan singkat.",
+      "RIKSIT menggabungkan data sensor dari **BMKG** dan **Open-Meteo** dengan wawasan **AI generatif** (Gemini & Groq) untuk wilayah yang Anda pilih.",
+    "disclaimer.community":
+      "**Live Feed** menampilkan laporan dari **warga** dan pemantauan otomatis **Riksit Agent**. Konten ini **tidak diverifikasi** secara terpusat — perlakukan sebagai sinyal tambahan, bukan kebenaran resmi.",
     "disclaimer.warning":
-      "Wawasan AI **tidak selalu 100% akurat** dan tidak menggantikan informasi resmi dari **BMKG**, **BPBD**, atau otoritas setempat. Gunakan sebagai pendamping, bukan satu-satunya rujukan untuk keputusan penting.",
+      "Wawasan AI maupun laporan komunitas **tidak selalu 100% akurat** dan tidak menggantikan informasi resmi dari **BMKG**, **BPBD**, atau otoritas setempat. Gunakan sebagai pendamping, bukan satu-satunya rujukan untuk keputusan penting.",
     "disclaimer.emergency":
       "Untuk keadaan darurat, hubungi **112** atau kanal resmi BPBD setempat.",
     "disclaimer.ack": "Saya Mengerti",
@@ -174,6 +210,39 @@ const DICTIONARY: Record<Locale, Dict> = {
     "app.dataErrorShort": "Gagal memuat data",
 
     "github.viewSource": "Lihat kode sumber di GitHub",
+
+    "spotted.title": "Info Terpantau",
+    "spotted.severity.info": "Info",
+    "spotted.severity.warning": "Peringatan",
+    "spotted.severity.danger": "Bahaya",
+    "spotted.expiresIn": "berakhir dalam {minutes} menit",
+    "spotted.expiresInHours": "berakhir dalam {hours} jam",
+    "spotted.expiresInDays": "berakhir dalam {days} hari",
+    "spotted.expired": "telah berakhir",
+
+    "feed.title": "Laporan Warga",
+    "feed.empty": "Belum ada laporan.",
+    "feed.aiSource": "Riksit Agent",
+    "feed.timeAgo.justNow": "baru saja",
+    "feed.timeAgo.minutes": "{n} menit lalu",
+    "feed.timeAgo.hours": "{n} jam lalu",
+    "feed.timeAgo.days": "{n} hari lalu",
+    "feed.report": "Laporkan",
+    "feed.inputPlaceholder": "Tulis laporan...",
+
+    "report.title": "Kirim Laporan",
+    "report.fieldUsername": "Nama",
+    "report.fieldMessage": "Pesan",
+    "report.fieldLocation": "Lokasi",
+    "report.submit": "Kirim",
+    "report.submitting": "Mengirim...",
+    "report.cancel": "Batal",
+    "report.successToast": "Laporan terkirim. Terima kasih!",
+    "report.errorPrefix": "Gagal mengirim laporan",
+    "report.charCount": "{n}/500",
+    "report.validationRequired": "Semua kolom wajib diisi.",
+    "report.validationMaxChars": "Pesan tidak boleh lebih dari 500 karakter.",
+    "report.close": "Tutup",
   },
   "en-US": {
     "header.live": "Live data",
@@ -237,9 +306,11 @@ const DICTIONARY: Record<Locale, Dict> = {
 
     "disclaimer.title": "Welcome to RIKSIT",
     "disclaimer.intro":
-      "RIKSIT uses **generative AI** to summarize environmental data from **BMKG**, **Open-Meteo**, and other public sources into a concise insight.",
+      "RIKSIT combines sensor data from **BMKG** and **Open-Meteo** with **generative AI** insights (Gemini & Groq) for the region you select.",
+    "disclaimer.community":
+      "The **Live Feed** shows reports from **community members** and automated monitoring by **Riksit Agent**. This content is **not centrally verified** — treat it as supplementary signal, not as official information.",
     "disclaimer.warning":
-      "AI insight is **not always 100% accurate** and does not replace official information from **BMKG**, **BPBD**, or local authorities. Use as a companion, not the sole reference for important decisions.",
+      "AI insight and community reports are **not always 100% accurate** and do not replace official information from **BMKG**, **BPBD**, or local authorities. Use as a companion, not the sole reference for important decisions.",
     "disclaimer.emergency":
       "For emergencies, call **112** or the official BPBD channel for your area.",
     "disclaimer.ack": "I Understand",
@@ -252,6 +323,39 @@ const DICTIONARY: Record<Locale, Dict> = {
     "app.dataErrorShort": "Failed to load data",
 
     "github.viewSource": "View source on GitHub",
+
+    "spotted.title": "Spotted Info",
+    "spotted.severity.info": "Info",
+    "spotted.severity.warning": "Warning",
+    "spotted.severity.danger": "Danger",
+    "spotted.expiresIn": "expires in {minutes} min",
+    "spotted.expiresInHours": "expires in {hours} h",
+    "spotted.expiresInDays": "expires in {days} d",
+    "spotted.expired": "expired",
+
+    "feed.title": "Community Reports",
+    "feed.empty": "No reports yet.",
+    "feed.aiSource": "Riksit Agent",
+    "feed.timeAgo.justNow": "just now",
+    "feed.timeAgo.minutes": "{n} min ago",
+    "feed.timeAgo.hours": "{n} h ago",
+    "feed.timeAgo.days": "{n} d ago",
+    "feed.report": "Report",
+    "feed.inputPlaceholder": "Write a report...",
+
+    "report.title": "Submit a Report",
+    "report.fieldUsername": "Name",
+    "report.fieldMessage": "Message",
+    "report.fieldLocation": "Location",
+    "report.submit": "Send",
+    "report.submitting": "Sending...",
+    "report.cancel": "Cancel",
+    "report.successToast": "Report submitted. Thank you!",
+    "report.errorPrefix": "Failed to submit report",
+    "report.charCount": "{n}/500",
+    "report.validationRequired": "All fields are required.",
+    "report.validationMaxChars": "Message cannot exceed 500 characters.",
+    "report.close": "Close",
   },
 };
 

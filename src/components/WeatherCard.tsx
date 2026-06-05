@@ -46,32 +46,32 @@ export default function WeatherCard({ weather, loading }: Props) {
       hint={`${t("weather.update")} ${updated}`}
     >
       <div className="flex items-center gap-2.5">
-        <div className="grid place-items-center w-11 h-11 rounded-full bg-riksit-neon/10 ring-1 ring-riksit-neon/30 text-riksit-neon shadow-glow shrink-0">
-          <Icon size={24} />
+        <div className="grid place-items-center w-14 h-14 rounded-full bg-riksit-neon/10 ring-1 ring-riksit-neon/30 text-riksit-neon shadow-glow shrink-0">
+          <Icon size={30} />
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-baseline gap-1">
-            <span className="font-mono text-2xl font-semibold text-riksit-ink leading-none">
+            <span className="font-mono text-4xl font-semibold text-riksit-ink leading-none">
               {Math.round(sample.t)}
             </span>
-            <span className="font-mono text-sm text-riksit-muted">°C</span>
+            <span className="font-mono text-base text-riksit-muted">°C</span>
           </div>
-          <p className="text-[11px] text-riksit-ink/90 truncate">{sample.weather_desc}</p>
+          <p className="text-xs text-riksit-ink/90 truncate mt-1">{sample.weather_desc}</p>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5 mt-2">
         <Stat
-          icon={<DropIcon size={12} />}
+          icon={<DropIcon size={13} />}
           label={t("weather.humidity")}
           value={`${Math.round(sample.hu)}%`}
         />
         <Stat
-          icon={<WindIcon size={12} />}
+          icon={<WindIcon size={13} />}
           label={t("weather.wind")}
           value={`${Math.round(sample.ws)} ${sample.wd}`}
         />
         <Stat
-          icon={<ThermometerIcon size={12} />}
+          icon={<ThermometerIcon size={13} />}
           label={t("weather.cloud")}
           value={`${Math.round(sample.tcc)}%`}
         />
@@ -83,11 +83,11 @@ export default function WeatherCard({ weather, loading }: Props) {
 function Stat({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
   return (
     <div className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-1 min-w-0">
-      <div className="flex items-center gap-1 text-[9px] uppercase tracking-wider text-riksit-muted">
+      <div className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-riksit-muted">
         <span className="text-riksit-neon shrink-0">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
-      <div className="font-mono text-[11px] text-riksit-ink mt-0.5 leading-tight truncate">
+      <div className="font-mono text-[13px] text-riksit-ink mt-0.5 leading-tight truncate">
         {value}
       </div>
     </div>

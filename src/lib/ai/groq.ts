@@ -15,12 +15,13 @@ interface GroqResponse {
 export const groqProvider: AIProvider = {
   source: "groq",
   envVar: "GROQ_API_KEY",
-  modelChain: ["llama-3.3-70b-versatile", "gemma2-9b-it"],
+  modelChain: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
   endpoint: () => "https://api.groq.com/openai/v1/chat/completions",
   authHeader: (key) => ({ Authorization: `Bearer ${key}` }),
-  buildBody: (model, snapshot, locale) => {
+  buildBody: (model, snapshot, locale, extraContext) => {
     const userPrompt =
-      `${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}\n\n` +
+      `${getContextHeader(locale)}\n${summarizeSnapshot(snapshot, locale)}` +
+      `${extraContext ?? ""}\n\n` +
       getUserCallToAction(locale);
     return {
       model,

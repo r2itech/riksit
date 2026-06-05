@@ -21,6 +21,7 @@ selectors floating on top as overlays.
 | Styling       | **Tailwind CSS** (custom dark + neon theme, glassmorphism)                             |
 | Map           | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles                              |
 | AI            | **Google Gemini API** primary, **Groq API** secondary fallback (both server-side only) |
+| Community     | **Supabase** PostgREST for reports & spotted_info, Realtime for live feed              |
 | Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                         |
 | UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library                |
 | Formatting    | **Prettier** + **ESLint** (`next/core-web-vitals` + `eslint-config-prettier`)          |
@@ -58,12 +59,44 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
 - Re-generated automatically on every region change.
 - Consistent structure: `## Ringkasan Kondisi` → `## Potensi Risiko` → `## Rekomendasi`.
+- **Community signal**: the 10 most recent reports in the selected region are
+  fetched from Supabase and appended to the prompt under "Laporan Terkini dari
+  Masyarakat & AI Monitor:" so the AI sees both the sensor data and what
+  people are reporting. A Supabase failure never blocks insight generation.
 - **Provider chain**: Gemini first, Groq as a secondary AI fallback, deterministic rule-based generator as the last resort.
   - **Gemini chain**: `gemini-2.5-flash` → `gemini-2.5-flash-lite` → `gemini-2.0-flash`.
   - **Groq chain**: `llama-3.3-70b-versatile` → `gemma2-9b-it`.
   - Each model in each chain has its own free-tier quota, so a 429 on one model is automatically retried on the next, and a quota-exhausted Gemini chain falls through to Groq before the deterministic fallback runs.
 - **Deterministic fallback**: if both AI chains are quota-exhausted, both keys are missing, or every network call fails, RIKSIT generates a rule-based insight from the same data. A `via Gemini` / `via Groq` / `via fallback` label is shown in the card corner.
 - **Per-region cache**: successful AI results (Gemini or Groq) are cached for 10 minutes (matching the snapshot data window); fallback results are cached for only 2 minutes so the AI providers get retried sooner once a quota window recovers.
+
+### Community reports & Spotted Info
+
+- **Live Feed** (`LiveFeedCard`): country-wide community reports backed by a
+  Supabase `reports` table — not region-filtered, so users see activity from
+  everywhere at once. Reads like a chat ticker: items render bottom-up with
+  the newest at the bottom, the whole list slides upward smoothly each time
+  a new report arrives via **Supabase Realtime**, and the DOM is capped at
+  15 items (the oldest is unmounted when a 16th comes in). There's no manual
+  scrollbar.
+- **Riksit Agent** rows (server-inserted, `is_ai = true`) are visually
+  distinguished from human reports with a fixed neon-green accent and a
+  spark icon. Every other reporter's username is given a stable hashed
+  color from a curated palette (neon green, cyan, amber, pink, purple,
+  orange, teal) — same username always renders the same color across
+  refreshes. These `is_ai = true` rows are inserted by a separate
+  background process — see the companion
+  [`riksit-worker`](https://github.com/r2itech/riksit-worker) repo.
+- **Submit a report**: the bottom of the Live Feed is a non-typeable
+  chat-input-styled button ("Tulis laporan…"). Clicking it opens a
+  focus-trapped modal with the four cascading region dropdowns
+  (Province → Regency → District → Village), a 500-char message, and a
+  name. POSTs to `/api/report`, which lowercases the location names and
+  forces `is_ai = false` server-side.
+- **Spotted Info** (`SpottedInfoCard`): time-bounded community/operator notices
+  (`spotted_info` table, filtered by `expires_at > now()`). On desktop the
+  card joins the top row only when at least one active item exists; on mobile
+  it renders as a banner below the header. Polls every 5 minutes.
 
 ### Real-time earthquake feed
 
@@ -124,11 +157,15 @@ proxy validates the `parent` format per level to prevent SSRF.
 │  RegionSelector ──┐                                          │
 │  RegionMap ───────┤ user picks region / clicks the map       │
 │  RiksitApp ───────┤                                          │
+│  LiveFeedCard ────┤ Supabase Realtime subscription           │
 │                   ▼                                          │
 │              /api/snapshot (one call per region change)      │
 │              /api/insight  (one call per region change)      │
 │              /api/earthquake (poll every 90 s)               │
 │              /api/region (cascading dropdowns)               │
+│              /api/spotted (poll every 5 min)                 │
+│              /api/reports (initial list, country-wide)       │
+│              /api/report  (POST — submit a report)           │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -141,6 +178,7 @@ proxy validates the `parent` format per level to prevent SSRF.
 │                                                              │
 │   /api/insight    ─► route cache (10 m AI / 2 m fallback)    │
 │                   ─► generateInsight()  [lib/ai]             │
+│                        appends 10 latest Supabase reports    │
 │                        iterates PROVIDERS:                   │
 │                        ├─ geminiProvider                     │
 │                        │    ├─ gemini-2.5-flash              │
@@ -174,23 +212,28 @@ clicks through to the map. Overlay z-indexes are above 1000 so they don't get
 covered by Leaflet's internal panes.
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│  HEADER: RIKSIT · region label              ● Live data  │
-├──────────────────────────────────────────────────────────┤
-│      ┌────────────────────────────────┐                  │
-│      │ Province │ Reg │ Dist │ Village│ ← selector bar  │
-│      └────────────────────────────────┘                  │
-│  ┌──────────┐                          ┌──────────────┐  │
-│  │ AI       │                          │ Weather      │  │
-│  │ INSIGHT  │      MAP (full canvas,   │ Forecast     │  │
-│  │ (overlay │      click + zoom        │ Air Quality  │  │
-│  │  panel)  │      interactive)        │ Earthquake   │  │
-│  └──────────┘                          └──────────────┘  │
-└──────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  HEADER: RIKSIT · region label                  ● Live data  │
+├──────────────────────────────────────────────────────────────┤
+│  ┌──────┐┌──────┐┌──────┐┌──────┐┌──────┐                    │
+│  │SPOTTED││WTHR ││FCST ││AIR  ││QUAKE│  ← top-row cards    │
+│  └──────┘└──────┘└──────┘└──────┘└──────┘   (SPOTTED hides   │
+│                                              if none active) │
+│  ┌──────────┐                          ┌──────────────────┐  │
+│  │ AI       │      MAP (full canvas,   │ LIVE FEED        │  │
+│  │ INSIGHT  │      click + zoom        │ (reports w/      │  │
+│  │ (left    │      interactive)        │  Realtime,       │  │
+│  │  panel)  │                          │  Laporkan btn)   │  │
+│  │          │  ┌──────────────────┐    │                  │  │
+│  │          │  │ Region selectors │    │                  │  │
+│  └──────────┘  └──────────────────┘    └──────────────────┘  │
+└──────────────────────────────────────────────────────────────┘
 ```
 
-**Mobile (< 1024 px):** plain vertical stack — selectors above the map, map at
-~55 vh, then the insight and a 2×2 grid of the four data cards below.
+**Mobile (< 1024 px):** plain vertical stack —
+Header → SpottedInfo banner (if active) → BMKG warnings (if active) →
+Map + selector → 2×2 grid of weather cards → AI Insight → "Laporkan" button
+→ Live Feed → Footer.
 
 The dual layout is rendered conditionally via
 `matchMedia("(min-width:1024px)")`, not via CSS `display:none`, so only one
@@ -210,10 +253,12 @@ Leaflet instance is mounted at a time (Leaflet dislikes hidden containers).
 
 ## Environment Variables
 
-| Variable         | Required   | Description                                                                                                                                                                                                                               |
-| ---------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `GEMINI_API_KEY` | optional\* | Google Generative AI key. Used **server-side only**, never exposed to the browser. Absent ⇒ the Gemini chain is skipped and Groq is attempted first.                                                                                      |
-| `GROQ_API_KEY`   | optional\* | Groq API key. Used **server-side only**, never exposed to the browser. Acts as the secondary AI fallback when the Gemini chain is exhausted. Absent ⇒ skipped and the deterministic generator takes over once Gemini is also unavailable. |
+| Variable                        | Required   | Description                                                                                                                                                                                                                               |
+| ------------------------------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY`                | optional\* | Google Generative AI key. Used **server-side only**, never exposed to the browser. Absent ⇒ the Gemini chain is skipped and Groq is attempted first.                                                                                      |
+| `GROQ_API_KEY`                  | optional\* | Groq API key. Used **server-side only**, never exposed to the browser. Acts as the secondary AI fallback when the Gemini chain is exhausted. Absent ⇒ skipped and the deterministic generator takes over once Gemini is also unavailable. |
+| `NEXT_PUBLIC_SUPABASE_URL`      | optional   | Supabase project URL. Used by both the server (community-reports context for the AI prompt + `/api/spotted` / `/api/reports` / `/api/report`) and the browser (Realtime subscription on the live feed). Absent ⇒ feed routes return `[]`. |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | optional   | Supabase anon key. Safe to expose to the browser — RLS gates access on the Supabase side.                                                                                                                                                 |
 
 \* Technically optional. The app still runs without either key — the
 InsightCard just shows `via fallback` and uses the deterministic generator.
@@ -299,7 +344,7 @@ npm test              # single run (CI-friendly)
 npm run test:watch    # re-run on file change
 ```
 
-What's covered today (8 files, ~89 tests, runs in ~1 s):
+What's covered today (9 files, ~94 tests, runs in ~1 s):
 
 | File                 | Module under test                             | Highlights                                                                                                                                                                                           |
 | -------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -327,6 +372,9 @@ src/
       insight/route.ts      # POST — Gemini → Groq → fallback orchestration + route cache
       earthquake/route.ts   # GET — slim endpoint for 90 s polling
       region/route.ts       # GET — wilayah.id proxy (CORS workaround)
+      spotted/route.ts      # GET — active spotted_info rows for the current region (Supabase)
+      reports/route.ts      # GET — latest 20 community reports across every region (Supabase)
+      report/route.ts       # POST — anonymous community report submission (Supabase)
     globals.css             # theme + glassmorphism + Leaflet overrides
     icon.svg                # browser-tab favicon (App Router file convention)
     layout.tsx
@@ -348,6 +396,9 @@ src/
     AirQualityCard.tsx      # PM2.5 + 3 pollutants
     EarthquakeCard.tsx      # earthquake + auto-refresh indicator
     WarningBanner.tsx       # early warning banner (when active)
+    SpottedInfoCard.tsx     # active spotted_info items (desktop card / mobile banner)
+    LiveFeedCard.tsx        # community reports list with Supabase Realtime updates
+    ReportModal.tsx         # focus-trapped community-report submission modal
     CardShell.tsx           # card frame with glass border
     Skeleton.tsx            # shimmer loading skeleton
   lib/
@@ -360,6 +411,9 @@ src/
     nominatim.ts            # client reverse-geocode wrapper
     bmkg.ts                 # server-side BMKG client (weather + earthquake)
     open-meteo.ts           # server-side Open-Meteo client + pm25Band + pm25BandLabel
+    supabase-server.ts      # server-side PostgREST fetch wrapper + region OR-filter builder
+    supabase-client.ts      # client-side fetch wrapper + lazy Supabase Realtime client
+    reports-context.ts      # server helper: latest community reports → AI prompt block
     i18n.ts                 # locale catalog, typed dictionary, translate() — usable both client and server
     ai/                     # server-side AI insight registry + chain runner
       index.ts              #   generateInsight() — orchestrator + PROVIDERS list
@@ -379,6 +433,7 @@ src/
       fallback.test.ts      # Vitest — buildFallback structure + risk detection (ID + EN)
       chain.test.ts         # Vitest — runProviderChain no-key short-circuit (parametrized) + generateInsight fallback (ID + EN)
       i18n.test.ts          # Vitest — locale catalog, isLocale narrowing, translate + interpolation
+      reports-context.test.ts # Vitest — community-reports prompt block formatting (ID + EN)
 
 # Root-level config
 .prettierrc                 # Prettier formatting rules
@@ -391,6 +446,13 @@ tsconfig.json               # TypeScript config (path alias @/* → src/*)
 ```
 
 ---
+
+## Related repositories
+
+- **[`r2itech/riksit-worker`](https://github.com/r2itech/riksit-worker)** —
+  the companion background worker that inserts the `is_ai = true` rows you
+  see attributed to "Riksit Agent" in the Live Feed. Runs separately from
+  this dashboard; both talk to the same Supabase `reports` table.
 
 ---
 
