@@ -25,8 +25,16 @@ export interface AIProvider {
   endpoint: (model: string) => string;
   /** Headers added on top of `Content-Type: application/json`. */
   authHeader: (key: string) => Record<string, string>;
-  /** Request JSON body for this model + snapshot + locale. */
-  buildBody: (model: string, snapshot: EnvironmentalSnapshot, locale: Locale) => unknown;
+  /** Request JSON body for this model + snapshot + locale. The optional
+   * `extraContext` is appended verbatim to the user prompt — used by the
+   * insight route to inject the latest community reports.
+   */
+  buildBody: (
+    model: string,
+    snapshot: EnvironmentalSnapshot,
+    locale: Locale,
+    extraContext: string,
+  ) => unknown;
   /** Pluck the generated text out of the parsed JSON response. */
   parseText: (data: unknown) => string | undefined;
 }
@@ -46,6 +54,7 @@ async function callModel(
   key: string,
   snapshot: EnvironmentalSnapshot,
   locale: Locale,
+  extraContext: string,
 ): Promise<CallResult> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(new Error("timeout")), REQUEST_TIMEOUT_MS);
@@ -56,7 +65,7 @@ async function callModel(
         "Content-Type": "application/json",
         ...provider.authHeader(key),
       },
-      body: JSON.stringify(provider.buildBody(model, snapshot, locale)),
+      body: JSON.stringify(provider.buildBody(model, snapshot, locale, extraContext)),
       signal: ctrl.signal,
     });
     if (!res.ok) {
@@ -88,13 +97,14 @@ export async function runProviderChain(
   provider: AIProvider,
   snapshot: EnvironmentalSnapshot,
   locale: Locale,
+  extraContext = "",
 ): Promise<InsightPayload | null> {
   const key = sanitizeKey(process.env[provider.envVar]);
   if (!key) return null;
 
   const generatedAt = new Date().toISOString();
   for (const model of provider.modelChain) {
-    const result = await callModel(provider, model, key, snapshot, locale);
+    const result = await callModel(provider, model, key, snapshot, locale, extraContext);
     if (result.ok) {
       console.log(`[${provider.source}] generated via ${model}`);
       return { generatedAt, text: result.text, source: provider.source };

@@ -40,28 +40,24 @@ export default function EarthquakeCard({ earthquake, loading, lastChecked }: Pro
     >
       <div className="flex items-center gap-2.5">
         <div
-          className={`grid place-items-center w-11 h-11 rounded-full ring-1 shrink-0 ${
+          className={`grid place-items-center w-14 h-14 rounded-full ring-1 shrink-0 ${
             intense
               ? "bg-riksit-danger/15 ring-riksit-danger/50 text-riksit-danger"
               : "bg-riksit-amber/10 ring-riksit-amber/40 text-riksit-amber"
           }`}
         >
-          <div className="font-mono text-base font-semibold leading-none">
-            {earthquake.magnitude}
-          </div>
+          <div className="font-mono text-xl font-semibold leading-none">{earthquake.magnitude}</div>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[11px] text-riksit-ink leading-snug line-clamp-2">
-            {earthquake.wilayah}
-          </p>
-          <p className="font-mono text-[9px] text-riksit-muted mt-0.5 truncate">
+          <p className="text-xs text-riksit-ink leading-snug line-clamp-2">{earthquake.wilayah}</p>
+          <p className="font-mono text-[10px] text-riksit-muted mt-0.5 truncate">
             {earthquake.kedalaman} • {earthquake.coordinates}
           </p>
         </div>
       </div>
-      <div className="flex items-center gap-1.5 mt-1.5 pt-1 border-t border-riksit-border/40">
+      <div className="flex items-center gap-1.5 mt-2 pt-1.5 border-t border-riksit-border/40">
         <span className="pulse-dot" aria-hidden="true" />
-        <span className="text-[9px] font-mono text-riksit-muted truncate">
+        <span className="text-[10px] font-mono text-riksit-muted truncate">
           {t("earthquake.lastCheck")}
           {checkedLabel ? `: ${checkedLabel}` : ""}
         </span>

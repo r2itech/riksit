@@ -12,6 +12,9 @@ import WarningBanner from "./WarningBanner";
 import InsightCard from "./InsightCard";
 import MapPanel from "./MapPanel";
 import RegionSelector from "./RegionSelector";
+import SpottedInfoCard, { type RegionNames } from "./SpottedInfoCard";
+import LiveFeedCard from "./LiveFeedCard";
+import ReportModal from "./ReportModal";
 import { fetchEarthquake, fetchInsight, fetchSnapshot } from "@/lib/client-api";
 import { resolveByCoordinates } from "@/lib/region-resolver";
 import type { EnvironmentalSnapshot, InsightPayload } from "@/lib/types";
@@ -47,6 +50,8 @@ export default function RiksitApp() {
   const [insightError, setInsightError] = useState<string | null>(null);
   const [earthquakeCheckedAt, setEarthquakeCheckedAt] = useState<string | null>(null);
   const [mapResolving, setMapResolving] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   const snapshotAbortRef = useRef<AbortController | null>(null);
   const insightAbortRef = useRef<AbortController | null>(null);
@@ -64,7 +69,6 @@ export default function RiksitApp() {
   // When region changes: push to URL, then fetch snapshot, then fetch insight.
   useEffect(() => {
     if (!region) return;
-    // Mirror selection to URL.
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       params.set("p", region.provinceId);
@@ -75,7 +79,6 @@ export default function RiksitApp() {
       window.history.replaceState(null, "", next);
     }
 
-    // Cancel any in-flight fetches.
     snapshotAbortRef.current?.abort();
     insightAbortRef.current?.abort();
     const snapCtrl = new AbortController();
@@ -100,7 +103,6 @@ export default function RiksitApp() {
         setSnapshotLoading(false);
         setEarthquakeCheckedAt(new Date().toISOString());
 
-        // Chain insight fetch — runs in parallel with the user seeing data.
         const insCtrl = new AbortController();
         insightAbortRef.current = insCtrl;
         setInsightLoading(true);
@@ -128,13 +130,9 @@ export default function RiksitApp() {
       snapCtrl.abort();
       insightAbortRef.current?.abort();
     };
-    // Locale is intentionally not in deps — the dedicated locale-change effect
-    // below re-fetches the insight without re-fetching the snapshot.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region]);
 
-  // Re-fetch only the insight when locale changes (snapshot is locale-agnostic).
-  // Skips the very first render where snapshot is null.
   useEffect(() => {
     if (!snapshot) return;
     const insCtrl = new AbortController();
@@ -156,21 +154,12 @@ export default function RiksitApp() {
         setInsightLoading(false);
       });
     return () => insCtrl.abort();
-    // snapshot is intentionally omitted — the region effect handles the
-    // snapshot-changed case. This effect only fires on locale flips.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locale]);
 
-  // Earthquake auto-refresh: poll /api/earthquake every 90 s while the tab is
-  // visible. setInterval is used (not chained setTimeouts) so a single skipped
-  // tick — e.g. the tab was backgrounded — can never break the chain. The
-  // server caches autogempa for 60 s, so we burn at most ~1 upstream BMKG
-  // request per 90 s of foreground time per server instance.
   useEffect(() => {
     if (!mounted || typeof window === "undefined") return;
     const POLL_MS = 90_000;
-    // Debounce so visibility-resume → near-immediate interval tick can't
-    // double-fetch within the same window.
     const MIN_GAP_MS = 60_000;
     let cancelled = false;
     let ctrl: AbortController | null = null;
@@ -200,17 +189,13 @@ export default function RiksitApp() {
       } catch (err) {
         if (ctrl?.signal.aborted) return;
         console.warn("[earthquake] poll failed", err);
-        // Reset debounce so the next interval tick or visibility-resume can retry.
         lastFetchAt = 0;
       }
     };
 
     const interval = setInterval(tick, POLL_MS);
     const onVisibility = () => {
-      if (document.visibilityState === "visible") {
-        // Refresh immediately when the tab is re-focused (if outside the debounce window).
-        tick();
-      }
+      if (document.visibilityState === "visible") tick();
     };
     document.addEventListener("visibilitychange", onVisibility);
 
@@ -270,7 +255,31 @@ export default function RiksitApp() {
     return `${region.villageName}, ${region.districtName}, ${region.regencyName}, ${region.provinceName}`;
   }, [region, t]);
 
+  // Lowercased region names — passed to anything that filters Supabase rows.
+  const regionNames = useMemo<RegionNames | null>(() => {
+    if (!region) return null;
+    return {
+      province: region.provinceName.toLowerCase(),
+      regency: region.regencyName.toLowerCase(),
+      district: region.districtName.toLowerCase(),
+      village: region.villageName.toLowerCase(),
+    };
+  }, [region]);
+
   const live = snapshot !== null && !snapshotLoading;
+
+  const openReport = useCallback(() => setReportOpen(true), []);
+  const closeReport = useCallback(() => setReportOpen(false), []);
+  const onReportSuccess = useCallback(() => {
+    setToast(t("report.successToast"));
+  }, [t]);
+
+  // Auto-dismiss the toast.
+  useEffect(() => {
+    if (!toast) return;
+    const id = window.setTimeout(() => setToast(null), 3500);
+    return () => window.clearTimeout(id);
+  }, [toast]);
 
   if (!mounted) {
     return (
@@ -287,6 +296,15 @@ export default function RiksitApp() {
     );
   }
 
+  const reportDefaultRegion = region
+    ? {
+        provinceId: region.provinceId,
+        regencyId: region.regencyId,
+        districtId: region.districtId,
+        villageId: region.villageId,
+      }
+    : undefined;
+
   return (
     <div className="flex flex-col lg:h-dvh lg:overflow-hidden">
       <Header live={live} regionLabel={region ? regionLabel : undefined} />
@@ -297,139 +315,303 @@ export default function RiksitApp() {
         </div>
       ) : null}
 
-      {/* ─── DESKTOP (lg+): map fills the canvas; insight + selectors + data
-            cards float on top as overlays, like Nemesis. ─── */}
       {isDesktop ? (
-        <main className="flex-1 min-h-0 relative p-3">
-          {snapshotError ? (
-            <div
-              role="alert"
-              className="absolute top-3 left-1/2 -translate-x-1/2 z-[1300] glass border-riksit-danger/40 p-2 text-xs text-riksit-danger max-w-md"
-            >
-              {t("app.dataErrorShort")}: {snapshotError}
-            </div>
-          ) : null}
-
-          {/* Full-bleed map */}
-          <MapPanel
-            variant="bare"
-            snapshot={snapshot}
-            loading={snapshotLoading}
-            onPick={onMapPick}
-            resolving={mapResolving}
-          />
-
-          {/* Floating top bar: region selectors. */}
-          <div
-            className="
-            pointer-events-none absolute z-[1200]
-            top-3 left-12 right-3
-            flex justify-center
-          "
-          >
-            <div className="pointer-events-auto glass-strong neon-border px-3 py-1.5 max-w-[720px] w-full">
-              <RegionSelector
-                initial={initialRegion}
-                selected={region ?? undefined}
-                onChange={onRegionChange}
-              />
-            </div>
-          </div>
-
-          {/* Floating LEFT: AI Insight panel — fills below selector to footer */}
-          <div
-            className="
-            pointer-events-none absolute z-[1100]
-            top-24 left-3 bottom-3
-            w-[420px]
-          "
-          >
-            <div className="pointer-events-auto h-full">
-              <InsightCard
-                insight={insight}
-                loading={insightLoading || (snapshotLoading && !insight)}
-                error={insightError}
-                regionLabel={regionLabel}
-              />
-            </div>
-          </div>
-
-          {/* Floating RIGHT: 4 cards split into equal vertical slots — no scroll. */}
-          <div
-            className="
-            pointer-events-none absolute z-[1100]
-            top-5 right-3 bottom-10
-            w-[280px]
-            flex flex-col gap-2
-          "
-          >
-            <div className="pointer-events-auto flex-1 min-h-0">
-              <WeatherCard weather={snapshot?.weather ?? null} loading={snapshotLoading} />
-            </div>
-            <div className="pointer-events-auto flex-1 min-h-0">
-              <ForecastCard forecast={snapshot?.forecast ?? []} loading={snapshotLoading} />
-            </div>
-            <div className="pointer-events-auto flex-1 min-h-0">
-              <AirQualityCard airQuality={snapshot?.airQuality ?? null} loading={snapshotLoading} />
-            </div>
-            <div className="pointer-events-auto flex-1 min-h-0">
-              <EarthquakeCard
-                earthquake={snapshot?.earthquake ?? null}
-                loading={snapshotLoading}
-                lastChecked={earthquakeCheckedAt}
-              />
-            </div>
-          </div>
-        </main>
+        <DesktopLayout
+          snapshot={snapshot}
+          snapshotLoading={snapshotLoading}
+          snapshotError={snapshotError}
+          insight={insight}
+          insightLoading={insightLoading}
+          insightError={insightError}
+          regionLabel={regionLabel}
+          initialRegion={initialRegion}
+          region={region}
+          regionNames={regionNames}
+          earthquakeCheckedAt={earthquakeCheckedAt}
+          onMapPick={onMapPick}
+          mapResolving={mapResolving}
+          onRegionChange={onRegionChange}
+          onOpenReport={openReport}
+          t={t}
+        />
       ) : (
-        /* ─── MOBILE (<lg): vertical stack. Map is a sized panel, selectors
-            live with it; insight + cards follow below as you scroll. ─── */
-        <main className="flex-1 min-h-0 px-3 py-3 flex flex-col gap-3">
-          {snapshotError ? (
-            <div
-              role="alert"
-              className="glass border-riksit-danger/40 p-3 text-sm text-riksit-danger"
-            >
-              {t("app.dataError")}: {snapshotError}
-            </div>
-          ) : null}
+        <MobileLayout
+          snapshot={snapshot}
+          snapshotLoading={snapshotLoading}
+          snapshotError={snapshotError}
+          insight={insight}
+          insightLoading={insightLoading}
+          insightError={insightError}
+          regionLabel={regionLabel}
+          initialRegion={initialRegion}
+          region={region}
+          regionNames={regionNames}
+          earthquakeCheckedAt={earthquakeCheckedAt}
+          onMapPick={onMapPick}
+          mapResolving={mapResolving}
+          onRegionChange={onRegionChange}
+          onOpenReport={openReport}
+          t={t}
+        />
+      )}
 
-          <div className="h-[55vh] min-h-[360px] shrink-0">
-            <MapPanel
-              variant="withSelector"
-              snapshot={snapshot}
-              loading={snapshotLoading}
-              onPick={onMapPick}
-              resolving={mapResolving}
-              initial={initialRegion}
-              selected={region ?? undefined}
-              onRegion={onRegionChange}
+      <Footer />
+
+      {toast ? (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[1900] glass-strong neon-border px-4 py-2 text-sm text-riksit-neon animate-fade-in"
+        >
+          {toast}
+        </div>
+      ) : null}
+
+      <ReportModal
+        open={reportOpen}
+        onClose={closeReport}
+        onSuccess={onReportSuccess}
+        defaultRegion={reportDefaultRegion}
+      />
+
+      <DisclaimerModal />
+    </div>
+  );
+}
+
+interface LayoutProps {
+  snapshot: EnvironmentalSnapshot | null;
+  snapshotLoading: boolean;
+  snapshotError: string | null;
+  insight: InsightPayload | null;
+  insightLoading: boolean;
+  insightError: string | null;
+  regionLabel: string;
+  initialRegion: Partial<RegionIds> | undefined;
+  region: RegionResolved | null;
+  regionNames: RegionNames | null;
+  earthquakeCheckedAt: string | null;
+  onMapPick: (lat: number, lon: number) => void;
+  mapResolving: boolean;
+  onRegionChange: (next: RegionResolved) => void;
+  onOpenReport: () => void;
+  t: ReturnType<typeof useLocale>["t"];
+}
+
+function DesktopLayout(props: LayoutProps) {
+  const {
+    snapshot,
+    snapshotLoading,
+    snapshotError,
+    insight,
+    insightLoading,
+    insightError,
+    regionLabel,
+    initialRegion,
+    region,
+    regionNames,
+    earthquakeCheckedAt,
+    onMapPick,
+    mapResolving,
+    onRegionChange,
+    onOpenReport,
+    t,
+  } = props;
+
+  // Hide the spotted slot when there are no active items so the four data
+  // cards expand to fill the top row.
+  const [hasSpotted, setHasSpotted] = useState(false);
+  const onSpottedCount = useCallback((n: number) => setHasSpotted(n > 0), []);
+
+  return (
+    <main className="flex-1 min-h-0 relative p-3">
+      {snapshotError ? (
+        <div
+          role="alert"
+          className="absolute top-3 left-1/2 -translate-x-1/2 z-[1300] glass border-riksit-danger/40 p-2 text-xs text-riksit-danger max-w-md"
+        >
+          {t("app.dataErrorShort")}: {snapshotError}
+        </div>
+      ) : null}
+
+      <MapPanel
+        variant="bare"
+        snapshot={snapshot}
+        loading={snapshotLoading}
+        onPick={onMapPick}
+        resolving={mapResolving}
+      />
+
+      {/*
+        Layout grid (desktop). All overlays share the same edge offsets and
+        a consistent gap, scaled across lg / xl / 2xl. The diagram below
+        shows the numbers used everywhere below — if you tweak a side-panel
+        width, update the selector offsets in the same step so they stay
+        flush with the panels.
+
+           top:    top-3 (12)
+           ┌────────────────────────────────────────────────────────────┐
+           │           [ cards row — top-3, h-[145px] ]                 │  ← cards row band
+           │           (full-width band, centered with max-w)           │
+           ├──────────┬──────────────────────────────────────┬──────────┤
+           │          │                                      │          │  ← 12 px gap
+           │  AI      │                                      │  Live    │
+           │  Insight │              MAP CANVAS              │  Feed    │  ← side-panel band
+           │          │                                      │          │
+           │ (left-3) │  ┌──────[ selector ]─────────┐       │ (right-3)│
+           └──────────┘  └───────────────────────────┘       └──────────┘
+                                                                  bottom: bottom-3 (12)
+
+         Side-panel widths (lg / xl / 2xl):
+           AI Insight: 300 / 340 / 380
+           Live Feed : 280 / 320 / 360
+         Side-panel band top  = 12 (top-3) + 145 (cards row) + 12 (gap) = 169 px
+         Selector L offset    = 12 + AI_width + 12   (lg/xl/2xl: 324 / 364 / 404)
+         Selector R offset    = 12 + Feed_width + 12 (lg/xl/2xl: 304 / 344 / 384)
+      */}
+
+      {/* Top row: cards row. Spans the full inner width, centered with a
+          max-w that grows on larger screens so the cards don't shrink at
+          ≥2xl viewports. SpottedInfo joins as a 5th column when active;
+          its slot is `hidden` (still mounted) otherwise. */}
+      <div className="pointer-events-none absolute top-3 left-3 right-3 z-[1200] flex justify-center">
+        <div
+          className={`grid w-full gap-2 ${
+            hasSpotted
+              ? "grid-cols-5 max-w-[1120px] xl:max-w-[1280px] 2xl:max-w-[1480px]"
+              : "grid-cols-4 max-w-[1080px] xl:max-w-[1200px] 2xl:max-w-[1400px]"
+          }`}
+          style={{ height: "145px" }}
+        >
+          <div className={`pointer-events-auto min-h-0 min-w-0 ${hasSpotted ? "" : "hidden"}`}>
+            <SpottedInfoCard
+              region={regionNames}
+              variant="card"
+              onActiveCountChange={onSpottedCount}
             />
           </div>
-
-          <InsightCard
-            insight={insight}
-            loading={insightLoading || (snapshotLoading && !insight)}
-            error={insightError}
-            regionLabel={regionLabel}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="pointer-events-auto min-h-0 min-w-0">
             <WeatherCard weather={snapshot?.weather ?? null} loading={snapshotLoading} />
+          </div>
+          <div className="pointer-events-auto min-h-0 min-w-0">
             <ForecastCard forecast={snapshot?.forecast ?? []} loading={snapshotLoading} />
+          </div>
+          <div className="pointer-events-auto min-h-0 min-w-0">
             <AirQualityCard airQuality={snapshot?.airQuality ?? null} loading={snapshotLoading} />
+          </div>
+          <div className="pointer-events-auto min-h-0 min-w-0">
             <EarthquakeCard
               earthquake={snapshot?.earthquake ?? null}
               loading={snapshotLoading}
               lastChecked={earthquakeCheckedAt}
             />
           </div>
-        </main>
-      )}
+        </div>
+      </div>
 
-      <Footer />
+      {/* Left column: AI Insight — starts BELOW the cards row with a small
+          breathing gap. Both side panels share the same top offset so they
+          align with each other instead of stair-stepping. */}
+      <div className="pointer-events-none absolute z-[1100] top-[169px] left-3 bottom-7 w-[300px] xl:w-[340px] 2xl:w-[380px]">
+        <div className="pointer-events-auto h-full">
+          <InsightCard
+            insight={insight}
+            loading={insightLoading || (snapshotLoading && !insight)}
+            error={insightError}
+            regionLabel={regionLabel}
+          />
+        </div>
+      </div>
 
-      <DisclaimerModal />
-    </div>
+      {/* Right column: Live Feed — mirrors AI Insight's vertical band. */}
+      <div className="pointer-events-none absolute z-[1100] top-[169px] right-3 bottom-7 w-[280px] xl:w-[320px] 2xl:w-[360px]">
+        <div className="pointer-events-auto h-full">
+          <LiveFeedCard onReport={onOpenReport} />
+        </div>
+      </div>
+
+      {/* Center bottom: RegionSelector — sits in the gap between the two
+          side panels. L/R offsets track the side-panel widths so the
+          selector is always flush against (not under) the panels. */}
+      <div className="pointer-events-none absolute z-[1100] bottom-3 left-[324px] right-[304px] xl:left-[364px] xl:right-[344px] 2xl:left-[404px] 2xl:right-[384px] flex justify-center">
+        <div className="pointer-events-auto glass-strong neon-border w-full max-w-[720px] px-3 py-1.5">
+          <RegionSelector
+            initial={initialRegion}
+            selected={region ?? undefined}
+            onChange={onRegionChange}
+          />
+        </div>
+      </div>
+    </main>
+  );
+}
+
+function MobileLayout(props: LayoutProps) {
+  const {
+    snapshot,
+    snapshotLoading,
+    snapshotError,
+    insight,
+    insightLoading,
+    insightError,
+    regionLabel,
+    initialRegion,
+    region,
+    regionNames,
+    earthquakeCheckedAt,
+    onMapPick,
+    mapResolving,
+    onRegionChange,
+    onOpenReport,
+    t,
+  } = props;
+  return (
+    // Padding + gap grow slightly at `sm:` (≥640 px — typical phone landscape
+    // and small tablets) so the stack doesn't feel cramped at larger mobile
+    // widths while staying compact on small phones (~360 px).
+    <main className="flex-1 min-h-0 flex flex-col gap-3 px-3 py-3 sm:gap-4 sm:px-4 sm:py-4">
+      <SpottedInfoCard region={regionNames} variant="banner" />
+
+      {snapshotError ? (
+        <div role="alert" className="glass border-riksit-danger/40 p-3 text-sm text-riksit-danger">
+          {t("app.dataError")}: {snapshotError}
+        </div>
+      ) : null}
+
+      <div className="h-[55vh] min-h-[360px] shrink-0">
+        <MapPanel
+          variant="withSelector"
+          snapshot={snapshot}
+          loading={snapshotLoading}
+          onPick={onMapPick}
+          resolving={mapResolving}
+          initial={initialRegion}
+          selected={region ?? undefined}
+          onRegion={onRegionChange}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+        <WeatherCard weather={snapshot?.weather ?? null} loading={snapshotLoading} />
+        <ForecastCard forecast={snapshot?.forecast ?? []} loading={snapshotLoading} />
+        <AirQualityCard airQuality={snapshot?.airQuality ?? null} loading={snapshotLoading} />
+        <EarthquakeCard
+          earthquake={snapshot?.earthquake ?? null}
+          loading={snapshotLoading}
+          lastChecked={earthquakeCheckedAt}
+        />
+      </div>
+
+      <InsightCard
+        insight={insight}
+        loading={insightLoading || (snapshotLoading && !insight)}
+        error={insightError}
+        regionLabel={regionLabel}
+      />
+
+      <div className="h-[60vh] min-h-[320px]">
+        <LiveFeedCard onReport={onOpenReport} />
+      </div>
+    </main>
   );
 }

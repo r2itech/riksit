@@ -39,13 +39,13 @@ export default function ForecastCard({ forecast, loading }: Props) {
           return (
             <div
               key={f.date}
-              className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-1.5 flex flex-col items-center gap-0.5"
+              className="rounded-md bg-black/30 border border-riksit-border/50 px-1.5 py-2 flex flex-col items-center gap-1"
             >
-              <div className="text-[9px] font-mono text-riksit-muted truncate w-full text-center">
+              <div className="text-[10px] font-mono text-riksit-muted truncate w-full text-center">
                 {f.dayLabel}
               </div>
-              <Icon size={20} className="text-riksit-neon" />
-              <div className="font-mono text-[11px] text-riksit-ink whitespace-nowrap">
+              <Icon size={28} className="text-riksit-neon" />
+              <div className="font-mono text-[13px] text-riksit-ink whitespace-nowrap">
                 {f.tMin}°/<span className="text-riksit-neon">{f.tMax}°</span>
               </div>
             </div>
