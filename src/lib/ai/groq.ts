@@ -15,7 +15,7 @@ interface GroqResponse {
 export const groqProvider: AIProvider = {
   source: "groq",
   envVar: "GROQ_API_KEY",
-  modelChain: ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"],
+  modelChain: ["llama-3.3-70b-versatile", "openai/gpt-oss-20b"],
   endpoint: () => "https://api.groq.com/openai/v1/chat/completions",
   authHeader: (key) => ({ Authorization: `Bearer ${key}` }),
   buildBody: (model, snapshot, locale, extraContext) => {
