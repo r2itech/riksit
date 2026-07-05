@@ -26,6 +26,7 @@ selectors floating on top as overlays.
 | UI components | Custom (`SearchableSelect`, `CardShell`, etc.) — no external UI library                |
 | Formatting    | **Prettier** + **ESLint** (`next/core-web-vitals` + `eslint-config-prettier`)          |
 | Testing       | **Vitest** (TS-native, no transformer config required)                                 |
+| Analytics     | **Vercel Analytics** (page views) + a per-region Supabase counter (`/api/analytics`)   |
 
 No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
@@ -166,6 +167,7 @@ proxy validates the `parent` format per level to prevent SSRF.
 │              /api/spotted (poll every 5 min)                 │
 │              /api/reports (initial list, country-wide)       │
 │              /api/report  (POST — submit a report)           │
+│              /api/analytics (fire-and-forget region ping)    │
 └─────────────────────────────────────────────────────────────┘
                             │
                             ▼
@@ -375,6 +377,7 @@ src/
       spotted/route.ts      # GET — active spotted_info rows for the current region (Supabase)
       reports/route.ts      # GET — latest 20 community reports across every region (Supabase)
       report/route.ts       # POST — anonymous community report submission (Supabase)
+      analytics/route.ts    # POST — per-region visit counter (Supabase, fire-and-forget)
     globals.css             # theme + glassmorphism + Leaflet overrides
     icon.svg                # browser-tab favicon (App Router file convention)
     layout.tsx

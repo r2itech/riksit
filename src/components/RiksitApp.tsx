@@ -103,6 +103,19 @@ export default function RiksitApp() {
         setSnapshotLoading(false);
         setEarthquakeCheckedAt(new Date().toISOString());
 
+        // Fire-and-forget analytics ping; never blocks the UI.
+        fetch("/api/analytics", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            province_name: region.provinceName,
+            regency_name: region.regencyName,
+            district_name: region.districtName,
+            village_name: region.villageName,
+          }),
+          keepalive: true,
+        }).catch(() => {});
+
         const insCtrl = new AbortController();
         insightAbortRef.current = insCtrl;
         setInsightLoading(true);
