@@ -17,9 +17,9 @@ selectors floating on top as overlays.
 
 | Category      | Choice                                                                                 |
 | ------------- | -------------------------------------------------------------------------------------- |
-| Framework     | **Next.js 14** (App Router) + **TypeScript**                                           |
+| Framework     | **Next.js 16** (App Router) + **TypeScript**                                           |
 | Styling       | **Tailwind CSS** (custom dark + neon theme, glassmorphism)                             |
-| Map           | **Leaflet** + **react-leaflet** with **CARTO Dark** tiles                              |
+| Map           | **Leaflet** + **react-leaflet** with **OpenStreetMap** tiles                           |
 | AI            | **Google Gemini API** primary, **Groq API** secondary fallback (both server-side only) |
 | Community     | **Supabase** PostgREST for reports & spotted_info, Realtime for live feed              |
 | Markdown      | Tiny in-house renderer (`src/lib/markdown.ts`) — no extra deps                         |
@@ -52,7 +52,7 @@ No heavy UI dependencies: no react-select, headlessui, framer-motion, etc.
 
 ### Interactive map
 
-- **CARTO Dark** tiles served via OpenStreetMap.
+- **OpenStreetMap** tiles, darkened with a CSS filter (`.map-tiles-dark` in `globals.css`) — OSM publishes no dark tileset.
 - Scroll-wheel zoom, click-to-select, summary popup on the selected village's marker.
 - A transient cyan marker shows where you just clicked until the new region's snapshot finishes loading.
 
@@ -329,7 +329,7 @@ npm run format        # Prettier — rewrite all files
 npm run format:check  # Prettier — fail if anything is unformatted (CI-friendly)
 ```
 
-Config lives in `.prettierrc`, `.prettierignore`, and `.eslintrc.json`. Most
+Config lives in `.prettierrc`, `.prettierignore`, and `eslint.config.mjs`. Most
 IDEs (VS Code with the Prettier extension, JetBrains, etc.) pick these up
 automatically — turn on "format on save" and you're done.
 
@@ -441,7 +441,7 @@ src/
 # Root-level config
 .prettierrc                 # Prettier formatting rules
 .prettierignore             # files Prettier should ignore
-.eslintrc.json              # ESLint config (next/core-web-vitals + prettier)
+eslint.config.mjs           # ESLint flat config (next/core-web-vitals + prettier)
 vitest.config.ts            # Vitest config (node env, tsconfig path resolution)
 tailwind.config.ts          # Tailwind theme + custom colors / animations
 next.config.mjs             # Next.js config

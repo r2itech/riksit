@@ -1,5 +1,5 @@
 // Inline SVG icon set — nature-meets-tech aesthetic. Keep small and tree-shakable.
-import type { SVGProps } from "react";
+import type { JSX, SVGProps } from "react";
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 

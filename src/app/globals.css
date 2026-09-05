@@ -319,6 +319,10 @@ body {
   background: #07120e !important;
   font-family: var(--font-sans);
 }
+/* OSM has no dark tiles — invert the standard ones to approximate CARTO dark */
+.map-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) brightness(0.7) contrast(0.9) saturate(0.4);
+}
 .leaflet-control-attribution {
   background: rgba(7, 13, 10, 0.7) !important;
   color: #7fa896 !important;
